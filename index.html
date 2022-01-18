@@ -1,760 +1,278 @@
-<html><head></head><body><canvas id="canvas" width="1000" height="1000"></canvas>
-
-
-<style>
-    body {
-      background-color: grey;
-    }
-    #canvas {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translateX(-50%) translateY(-50%);
-    }
-</style>
-<script>
-
-let perlin = {
-    rand_vect: function(){
-        let theta = Math.random() * 2 * Math.PI;
-        return {x: Math.cos(theta), y: Math.sin(theta)};
-    },
-    dot_prod_grid: function(x, y, vx, vy){
-        let g_vect;
-        let d_vect = {x: x - vx, y: y - vy};
-        if (this.gradients[[vx,vy]]){
-            g_vect = this.gradients[[vx,vy]];
-        } else {
-            g_vect = this.rand_vect();
-            this.gradients[[vx, vy]] = g_vect;
-        }
-        return d_vect.x * g_vect.x + d_vect.y * g_vect.y;
-    },
-    smootherstep: function(x){
-        return 6*x**5 - 15*x**4 + 10*x**3;
-    },
-    interp: function(x, a, b){
-        return a + this.smootherstep(x) * (b-a);
-    },
-    seed: function(){
-        this.gradients = {};
-        this.memory = {};
-    },
-    get: function(x, y) {
-        if (this.memory.hasOwnProperty([x,y]))
-            return this.memory[[x,y]];
-        let xf = Math.floor(x);
-        let yf = Math.floor(y);
-        //interpolate
-        let tl = this.dot_prod_grid(x, y, xf,   yf);
-        let tr = this.dot_prod_grid(x, y, xf+1, yf);
-        let bl = this.dot_prod_grid(x, y, xf,   yf+1);
-        let br = this.dot_prod_grid(x, y, xf+1, yf+1);
-        let xt = this.interp(x-xf, tl, tr);
-        let xb = this.interp(x-xf, bl, br);
-        let v = this.interp(y-yf, xt, xb);
-        this.memory[[x,y]] = v;
-        return v;
-    }
-}
-perlin.seed(10);
-
-function findCBezPoints(b){
-  var startPt=b[0];
-  var controlPt1=b[1];
-  var controlPt2=b[2];
-  var endPt=b[3];
-  var pts=[b[0]];
-  var lastPt=b[0];
-  var tests=5000;
-  for(var t=0;t<=tests;t++){
-    var pt=getCubicBezierXYatT(b[0],b[1],b[2],b[3], t/tests);
-    var dx=pt.x-lastPt.x;
-    var dy=pt.y-lastPt.y;
-    var d=Math.sqrt(dx*dx+dy*dy);
-    var dInt=parseInt(d);
-    if(dInt>0 || t==tests){
-      lastPt=pt;
-      pts.push(pt);
-    }
-  }
-  return(pts);
-}
-
-
-function getCubicBezierXYatT(startPt, controlPt1, controlPt2, endPt, T) {
-  var x = CubicN(T, startPt.x, controlPt1.x, controlPt2.x, endPt.x);
-  var y = CubicN(T, startPt.y, controlPt1.y, controlPt2.y, endPt.y);
-  return ({
-    x: x,
-    y: y
-  });
-}
-
-function CubicN(T, a, b, c, d) {
-  var t2 = T * T;
-  var t3 = t2 * T;
-  return a + (-a * 3 + T * (3 * a - a * T)) * T + (3 * b + T * (-6 * b + b * 3 * T)) * T + (c * 3 - c * 3 * T) * t2 + d * t3;
-}
-
-
-
-function drawBez(b){
-  ctx.lineWidth=0;
-  ctx.beginPath();
-  ctx.moveTo(b[0].x,b[0].y);
-  ctx.bezierCurveTo(b[1].x,b[1].y, b[2].x,b[2].y, b[3].x,b[3].y);
-  ctx.stroke();
-}
-
-function rand(min, max) { 
-  return Math.floor(Math.random() * (max - min + 1) + min)
-}
-
-
-
-var config = {
-  height: 1000,
-  width: 1000,
-  background: '#ffffff'
-}
-
-var c = document.getElementById("canvas");
-c.width = config.width
-c.height = config.height
-
-var ctx = c.getContext("2d");
-ctx.imageSmoothingQuality= "high"
-
-
-ctx.rect(0,0,config.width,config.height)
-ctx.fillStyle = '#ffffff'
-ctx.fill()
-
-
-
-
-
-
-
-
-
-let center = config.width/2
-
-let pointArray = [[center,center]]
-
-ctx.reCenter = function() {
-  ctx.moveTo(center, center)
-  pointArray.push([center, center])
-}
-
-ctx.circle = function(width, fill, fillColor) {
-  ctx.beginPath();
-
-  let startX = pointArray[pointArray.length-1][0]
-  let startY = pointArray[pointArray.length-1][1]
-
-  ctx.arc(startX, startY, width, 0, 2 * Math.PI);
-  if(fill == true) {
-    ctx.fillStyle = fillColor
-    ctx.fill();
-    ctx.closePath()
-  }
-}
-
-ctx.oval = function(width, height, angle, fill, fillColor) {
-    ctx.beginPath();
-
-    let startX = pointArray[pointArray.length-1][0]
-    let startY = pointArray[pointArray.length-1][1]
-
-    ctx.ellipse(startX, startY, width, height, angle, 0, 2 * Math.PI);
-
-    if(fill == true) {
-        ctx.fillStyle = fillColor
-        ctx.fill();
-        ctx.closePath()
-    }
- 
-}
-
-ctx.move = function(x,y) {
-  let newX = pointArray[pointArray.length-1][0] + x
-  let newY = pointArray[pointArray.length-1][1] + y
-  ctx.moveTo(newX, newY)
-  pointArray.push([newX, newY])
-}
-
-ctx.line = function(x,y) {
-  let newX = pointArray[pointArray.length-1][0] + x
-  let newY = pointArray[pointArray.length-1][1] + y
-  ctx.lineTo(newX, newY)
-  pointArray.push([newX, newY])
-}
-
-ctx.lineCurved = function(endX, endY, cp1, cp2) {
-  let startX = pointArray[pointArray.length-1][0]
-  let startY = pointArray[pointArray.length-1][1]
-
-  let newEndX = startX + endX
-  let newEndY = startY + endY
-
-  let cp1Local = startX + cp1
-  let cp2Local = startY + cp2
-
-  ctx.bezierCurveTo(startX, startY, cp1Local, cp2Local, newEndX, newEndY);
-  pointArray.push([newEndX, newEndY])
-}
-
-ctx.lineCurvedTo = function(startX, startY, endX, endY, cp1, cp2) {
-
-  let newEndX = startX + endX
-  let newEndY = startY + endY
-
-  let cp1Local = startX + cp1
-  let cp2Local = startY + cp2
-
-  ctx.bezierCurveTo(startX, startY, cp1, cp2, newEndX, newEndY);
-}
-
-
-ctx.lineCurvedStroke = function(startWidth, endWidth, endX, endY, cp1, cp2, cp3, cp4) {
-  let startX = pointArray[pointArray.length-1][0]
-  let startY = pointArray[pointArray.length-1][1]
-
-  let newEndX = startX + endX
-  let newEndY = startY + endY
-
-  let cp1Local = startX + cp1
-  let cp2Local = startY + cp2
-
-  let cp3Local = startX + cp3
-  let cp4Local = startY + cp4
-
-  var bezier = [{x: startX, y: startY}, {x: cp1Local, y: cp2Local}, {x: cp3Local, y:cp4Local}, {x:newEndX, y:newEndY}]
-
-  var bezierPoints = findCBezPoints(bezier);
-
-  var points = [null, null, null];
-
-  for(var i=0; i<bezierPoints.length; i++) {
-
-    var width = startWidth + i / endWidth;
-
-    var x = bezierPoints[i].x;
-    var y = bezierPoints[i].y;
-
-    points[0] = points[1];
-    points[1] = points[2];
-    points[2] = { X:x, Y:y};
-
-    if(points[0] == null)
-        continue;
-
-    var p0 = points[0];
-    var p1 = points[1];
-    var p2 = points[2];
-
-    var x0 = (p0.X + p1.X) / 2;
-    var y0 = (p0.Y + p1.Y) / 2;
-
-    var x1 = (p1.X + p2.X) / 2;
-    var y1 = (p1.Y + p2.Y) / 2;
-
-    ctx.beginPath();
-    ctx.lineWidth = width;
-    ctx.strokeStyle = "black";
-    ctx.lineCap = 'round';
-
-    ctx.moveTo(x0, y0);
-    ctx.quadraticCurveTo(p1.X, p1.Y, x1, y1);
-    ctx.stroke();
-
-  }
-
-}
-
-
-ctx.lineCurvedStrokeLash = function(color, startX, startY, startWidth, endWidth, endX, endY, cp1, cp2, cp3, cp4) {
-
-  let newEndX = startX + endX
-  let newEndY = startY + endY
-
-  let cp1Local = startX + cp1
-  let cp2Local = startY + cp2
-
-  let cp3Local = startX + cp3
-  let cp4Local = startY + cp4
-
-  var bezier = [{x: startX, y: startY}, {x: cp1Local, y: cp2Local}, {x: cp3Local, y:cp4Local}, {x:newEndX, y:newEndY}]
-
-  var bezierPoints = findCBezPoints(bezier);
-
-  var points = [null, null, null];
-
-  for(var i=0; i<bezierPoints.length; i++) {
-
-    var width = startWidth + i / endWidth;
-
-    var x = bezierPoints[i].x;
-    var y = bezierPoints[i].y;
-
-    points[0] = points[1];
-    points[1] = points[2];
-    points[2] = { X:x, Y:y};
-
-    if(points[0] == null)
-        continue;
-
-    var p0 = points[0];
-    var p1 = points[1];
-    var p2 = points[2];
-
-    var x0 = (p0.X + p1.X) / 2;
-    var y0 = (p0.Y + p1.Y) / 2;
-
-    var x1 = (p1.X + p2.X) / 2;
-    var y1 = (p1.Y + p2.Y) / 2;
-
-    ctx.beginPath();
-    ctx.lineWidth = width;
-    ctx.strokeStyle = color
-    ctx.lineCap = 'round';
-
-    ctx.moveTo(x0, y0);
-    ctx.quadraticCurveTo(p1.X, p1.Y, x1, y1);
-    ctx.stroke();
-
-  }
-
-  //pointArray.push([newEndX, newEndY])
-
-}
-
-let eyeLashPoints = []
-
-
-ctx.lineCurvedStroke = function(color, startWidth, endWidth, endX, endY, cp1, cp2, cp3, cp4, eyeLash) {
-  let startX = pointArray[pointArray.length-1][0]
-  let startY = pointArray[pointArray.length-1][1]
-
-  let newEndX = startX + endX
-  let newEndY = startY + endY
-
-  let cp1Local = startX + cp1
-  let cp2Local = startY + cp2
-
-  let cp3Local = startX + cp3
-  let cp4Local = startY + cp4
-
-  var bezier = [{x: startX, y: startY}, {x: cp1Local, y: cp2Local}, {x: cp3Local, y:cp4Local}, {x:newEndX, y:newEndY}]
-
-  var bezierPoints = findCBezPoints(bezier);
-
-  var points = [null, null, null];
-
-  if(eyeLashPoints.length == 0) {
-    var eyeLashPoint = rand(50, bezierPoints.length-1);
-    var eyeLashPoint2 = rand(50, bezierPoints.length-1);
-    var eyeLashPoint3 = rand(50, bezierPoints.length-1);
-  }
-
- 
-
-  eyeLashPoints.push(eyeLashPoint, eyeLashPoint2, eyeLashPoint3);
-
-  for(var i=0; i<bezierPoints.length; i++) {
-
-    var width = startWidth + i / endWidth;
-
-    var x = bezierPoints[i].x;
-    var y = bezierPoints[i].y;
-
-    points[0] = points[1];
-    points[1] = points[2];
-    points[2] = { X:x, Y:y};
-
-    if(points[0] == null)
-        continue;
-
-    var p0 = points[0];
-    var p1 = points[1];
-    var p2 = points[2];
-
-    var x0 = (p0.X + p1.X) / 2;
-    var y0 = (p0.Y + p1.Y) / 2;
-
-    var x1 = (p1.X + p2.X) / 2;
-    var y1 = (p1.Y + p2.Y) / 2;
-
-    ctx.beginPath();
-    ctx.lineWidth = width;
-    ctx.strokeStyle = color;
-    ctx.lineCap = 'round';
-
-    ctx.moveTo(x0, y0);
-    ctx.quadraticCurveTo(p1.X, p1.Y, x1, y1);
-    ctx.stroke();
-    //ctx.closePath()
-    
-
-    if(eyeLash == true) {
-        if(i == eyeLashPoints[0] || i == eyeLashPoints[1] || i == eyeLashPoints[2]) {
-            ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = color;
-            ctx.lineCap = 'round';
-            ctx.moveTo(x0, y0)
-            //console.log(x0, y0)
-
-            if(cp1 < 0) {
-                if(cp2 < 0) {
-                    
-                    ctx.lineCurvedStrokeLash("#2b909d", x0, y0, 7, -10, -30, -25, 0, 0, -40, 0)
-
-                } else {
-                   ctx.lineCurvedStrokeLash("#2b909d", x0, y0, 4, -10, -10, 12, 0, 0, -10, 0)
-
-                }
-            } else {
-                if(cp2 < 0) {
-                  ctx.lineCurvedStrokeLash("#2b909d", x0, y0, 7, -10, 30, -25, 0, 0, 40, 0)
-                   // ctx.lineTo(x0+10, y0-10)
-                } else {
-                  ctx.lineCurvedStrokeLash("#2b909d", x0, y0, 4, -10, 10, 12, 0, 0, 10, 0)
-                   // ctx.lineTo(x0+10, y0+10)
-                }
-            }
-            
-            ctx.stroke();
-            ctx.closePath()
-        }
-    }
-
-    ctx.moveTo(x0, y0);
-
-  }
-
- 
-
-
-}
-
-
-
-
-
-var counter = 0
-
-
-ctx.pencilTo = function(width, endWidth, iterations, color, startX, startY, endX, endY, cp1, cp2, cp3, cp4) {
-      
-  let newEndX = startX + endX
-  let newEndY = startY + endY
-
-  let cp1Local = startX + cp1
-  let cp2Local = startY + cp2
-
-  let cp3Local = startX + cp3
-  let cp4Local = startY + cp4
-
-  var bezier = [{x: startX, y: startY}, {x: cp1Local, y: cp2Local}, {x: cp3Local, y:cp4Local}, {x:newEndX, y:newEndY}]
-
-  var bezierPoints = findCBezPoints(bezier);
-
-  var points = [null, null, null];
-
-  var widthFactor = (width - endWidth) / bezierPoints.length
-
-  ctx.moveTo(startX, startY);
-
-  for (var j=0; j<iterations; j++ ) {
-
-    for(var i=0; i<bezierPoints.length; i++) {
-      
-      var drawWidth = width - (widthFactor * i)
-
-      var x = bezierPoints[i].x;
-      var y = bezierPoints[i].y;
-
-      points[0] = points[1];
-      points[1] = points[2];
-      points[2] = { X:x, Y:y};
-
-      if(points[0] == null)
-          continue;
-
-      var p0 = points[0];
-      var p1 = points[1];
-      var p2 = points[2];
-
-      var x0 = (p0.X + p1.X) / 2;
-      var y0 = (p0.Y + p1.Y) / 2;
-
-      ctx.moveTo(x0, y0);
-      
-      var alpha = perlin.get(x0, y0)
-
-      if(alpha < 0.1) {
-        alpha = 0.1
+<html>
+  <head>
+    <title>ggg</title>
+    <style>
+      body {
+        background-color: grey;
       }
+      #canvas {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-50%);
+      }
+  </style>
+  </head>
+  <body>
 
-      if(i > bezierPoints.length*0.8) {
-        let fader = (drawWidth/i)*10
-        alpha = alpha - fader
-        //console.log(alpha)
+    <canvas id="canvas" width="1000" height="1000"></canvas>
+
+    <script src="curves.js"></script>
+    <script src="numbers.js"></script>
+    <script src="perlin.js"></script>
+    <script src="shapes-lines.js"></script>
+
+    <script>
+      var config = {
+        height: 1000,
+        width: 1000,
+        background: '#ffffff'
       }
       
-      ctx.globalAlpha = alpha
+      var c = document.getElementById("canvas");
+      c.width = config.width
+      c.height = config.height
+      
+      var ctx = c.getContext("2d");
+      
+      ctx.rect(0,0,config.width,config.height)
+      ctx.fillStyle = '#ffffff'
+      ctx.fill()
+      
 
-      var radius = drawWidth
-
-      if(width == 1) {
-        radius = radius / 20
-        //console.log(radius)
+      let center = config.width/2
+      
+      let pointArray = [[center,center]]
+      
+      ctx.reCenter = function() {
+        ctx.moveTo(center, center)
+        pointArray.push([center, center])
       }
+      
+      
+      
+      
+      ctx.pencilTo(5, 0, 45, 'red', 100, 100, 100, 100, 200, 25, 100, 140)
+      
+      ctx.pencilTo(1, 1, 5, '#4a4b5b', 400, 70, 400, 0, 160, 25, 100, 140)
+      
+      ctx.pencilTo(0.5, 0.5, 100, '#4a4b5b', 400, 100, 400, 0, 200, 25, 100, 140)
+      
+      ctx.pencilTo(3, 0, 20, '#1915e7', 400, 120, 400, 0, 220, 25, 100, 140)
+      
+      ctx.pencilTo(3, 3, 50, '#DB4C40', 400, 140, 400, 0, 240, 25, 100, 140)
+      
+      
+      ctx.pencilTo(10, 8, 300, '#1915e7', 450, 220, 200, -190, 240, 125, 100, 140)
+      
+      ctx.globalCompositeOperation = 'multiply';
+      
+      ctx.pencilTo(10, 8, 200, '#ccfc0e', 500, 120, 300, -120, 140, 125, 100, 140)
+      
+      ctx.globalCompositeOperation = 'normal';
+      
+      ctx.pencilTo(10, 8, 400, '#DB4C40', 800, 90, -300, 100, 0, 0, 0, 0)
+      
+      //ctx.pencilTo(7, 2, 50, 'white', 4, 100, 100, 100, 100, 200, 25, 100, 100)
+      
+      
+      
+      ctx.globalAlpha = 1
+      
+      
+      
+      
+      
+      let eyeGap = rand(30,60)
+      let eyeFurthest = [rand(130,150), rand(0,40)]
+      
+      
+      let colors = ['#cdfe0e', '#99e446', '#edb056', '#3c83fd', '#7d4030']
+      let colorSelection = rand(0, 4)
+      
+      
+      
+      
+      //ctx.transform(1, 0, 0, 1, 0, 0);
+      //Draw Clip Path
+      //Start Clip 
+      
+      
+      ctx.save();
+      //ctx.scale(0.7, 1);
+      //ctx.translate(250, 0)
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.move(eyeGap, 0)
+      ctx.lineCurved(eyeFurthest[0], -eyeFurthest[1], 50, -120)
+      ctx.reCenter()
+      ctx.move(eyeGap, 0)
+      ctx.lineCurved(eyeFurthest[0], -eyeFurthest[1], 90, 60)
+      
+      ctx.clip();
+      
+      let eyeSize = rand(35, 50)
+      let pupilSize = rand(15, 30)
+      
+      ctx.reCenter()
+      ctx.move(100+eyeGap/4, -30)
+      
+      var startX = pointArray[pointArray.length-1][0]
+      var startY = pointArray[pointArray.length-1][1]
+      var grd = ctx.createLinearGradient(0, startY-100, 0, startY);
+      
+      grd.addColorStop(0, "#000000");
+      grd.addColorStop(1, colors[colorSelection]);
+      
+      
+      ctx.circle(eyeSize, true, grd)
+      ctx.circle(pupilSize, true, '#000000')
+      
+      
+      
+      
+      ctx.move(-20, -10)
+      var ovalRandWidth = rand(12,20)
+      var ovalRandHeight = rand(8,12)
+      ctx.oval(ovalRandWidth, ovalRandHeight, -45, true, '#ffffff')
+      
+      ctx.move(40, 30)
+      var ovalRandWidth2 = rand(6, 10)
+      var ovalRandHeight2 = rand(3, 7)
+      ctx.oval(ovalRandWidth2, ovalRandHeight2, -45, true, '#ffffff')
+      
+      ctx.restore();
+      
+      
+      //ctx.scale(1, 1);
+      
+      
+      ctx.reCenter()
+      
+      
+      
+      
+      //Draw Clip Path
+      //Start Clip 
+      ctx.save();
+      //Left Eye Shape 
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.move(-eyeGap, 0)
+      ctx.lineCurved(-eyeFurthest[0], -eyeFurthest[1], -50, -120)
+      ctx.reCenter()
+      ctx.move(-eyeGap, 0)
+      ctx.lineCurved(-eyeFurthest[0], -eyeFurthest[1], -90, 60)
+      
+      
+      ctx.clip();
+      
+      ctx.reCenter()
+      ctx.move(-100-eyeGap/4, -30)
+      ctx.circle(eyeSize, true, grd)
+      ctx.circle(pupilSize, true, '#000000')
+      
+      ctx.move(-20, -10)
+      var ovalRandWidth = rand(12,20)
+      var ovalRandHeight = rand(8,12)
+      ctx.oval(ovalRandWidth, ovalRandHeight, -45, true, '#ffffff')
+      ctx.move(40, 30)
+      var ovalRandWidth2 = rand(6, 10)
+      var ovalRandHeight2 = rand(3, 7)
+      ctx.oval(ovalRandWidth2, ovalRandHeight2, -45, true, '#ffffff')
+      
+      
+      ctx.restore();
+      
+      
+      let randPoint1 = rand(45,55)
+      let randPoint2 = rand(105,130)
+      
+      ctx.reCenter()
+      ctx.move(-eyeGap, 0)
+      ctx.lineCurvedStroke("#2b909d", 4, 20, -eyeFurthest[0], -eyeFurthest[1], -randPoint1, -randPoint2, -eyeFurthest[0], -eyeFurthest[1], true)
+      ctx.move(-10, -20)
+      ctx.lineCurvedStroke("#2b909d", 1, 100, -eyeFurthest[0]+10, -eyeFurthest[1], -randPoint1, -randPoint2, -eyeFurthest[0], -eyeFurthest[1])
+      
+      
+      ctx.reCenter()
+      ctx.move(eyeGap, 0)
+      ctx.lineCurvedStroke("#2b909d", 4, 20, eyeFurthest[0], -eyeFurthest[1], randPoint1, -randPoint2, eyeFurthest[0], -eyeFurthest[1], true)
+      ctx.move(10, -20)
+      ctx.lineCurvedStroke("#2b909d", 1, 100, eyeFurthest[0]-10, -eyeFurthest[1], randPoint1, -randPoint2, eyeFurthest[0], -eyeFurthest[1])
+      
+      
+      
+      
+      ctx.reCenter()
+      ctx.move(-eyeGap, 0)
+      ctx.lineCurvedStroke("#2b909d", 1, 100, -eyeFurthest[0], -eyeFurthest[1], -90, 60, -eyeFurthest[0], -eyeFurthest[1], true)
+      
+      ctx.reCenter()
+      ctx.move(eyeGap, 0)
+      ctx.lineCurvedStroke("#2b909d", 1, 100, eyeFurthest[0], -eyeFurthest[1], 90, 60, eyeFurthest[0], -eyeFurthest[1], true)
+      
+      
+      
+      
+      
+      let eyebrowHeight = rand(50, 80)
+      
+      let eyebrowArcUp = rand(50, 180)
+      let eyebrowArcDown = rand(50, 180)
+      
+      
+      
+      
+      ctx.reCenter()
+      ctx.move(eyeGap-20, -eyebrowHeight)
+      ctx.lineCurvedStroke("#2b909d", 4, -50, 180, -eyebrowHeight, 90, -eyebrowArcUp, eyebrowArcDown, -eyebrowHeight)
+      
+      ctx.reCenter()
+      ctx.move(-eyeGap+20, -eyebrowHeight)
+      ctx.lineCurvedStroke("#2b909d", 4, -50, -180, -eyebrowHeight, -90, -eyebrowArcUp, -eyebrowArcDown, -eyebrowHeight)
+      
+      
+      ctx.reCenter()
+      
+      let nosePosition = rand(40, 55)
+      ctx.move(0, nosePosition)
+      ctx.lineCurvedStroke(2, 100, 0, 15, 5, 0, 0, 15)
+      
+      
+      
+      
+      ctx.reCenter()
+      
+      let mouthPosition = rand(85, 105)
+      
+      let mouthWidth = rand(30, 60)
+      ctx.move(-mouthWidth, mouthPosition)
+      
+      let mouthAngle = rand(-15, 15)
+      ctx.lineCurvedStroke("#2b909d", 2, 100, mouthWidth*2, mouthAngle, 5, 0, 0, 15)
+      
+      
+      let jawAngle = rand(70, 90)
+      let jawAngle2 = rand(260, 300)
+      let jawAngle3 = rand(150, 190)
+      let jawAngle4 = rand(150, 250)
+      
+      ctx.reCenter()
+      ctx.move(-50, 150)
+      ctx.move(250, -250)
+      ctx.lineCurvedStroke("#2b909d", 3, 400, -200, jawAngle2, jawAngle, jawAngle3, -200, jawAngle2)
+      ctx.move(-400, 0)
+      ctx.lineCurvedStroke("#2b909d", 3, 400, 200, jawAngle2, -jawAngle, jawAngle3, 200, jawAngle2)
+      
+      
+      
+      
+      
+      </script>
+  </body>
+</html>
 
-      var offsetX = rand(-radius, radius);
-      var offsetY = rand(-radius, radius);
 
-      if(j > iterations*0.70) {
-        offsetY = -drawWidth
-      } 
-      if (j > iterations*0.85) {
-        offsetY = drawWidth
-      }
 
-      counter++
 
-
-      if(i > 1) {
-        ctx.fillStyle = color
-        ctx.fillRect(x0 + offsetX, y0 + offsetY, 1, 1);
-      }
-
-
-    }
-
-  }
-
-}
-
-
-ctx.pencilTo(5, 0, 45, 'red', 100, 100, 100, 100, 200, 25, 100, 140)
-
-ctx.pencilTo(1, 1, 5, '#4a4b5b', 400, 70, 400, 0, 160, 25, 100, 140)
-
-ctx.pencilTo(0.5, 0.5, 100, '#4a4b5b', 400, 100, 400, 0, 200, 25, 100, 140)
-
-ctx.pencilTo(3, 0, 20, '#1915e7', 400, 120, 400, 0, 220, 25, 100, 140)
-
-ctx.pencilTo(3, 3, 50, '#DB4C40', 400, 140, 400, 0, 240, 25, 100, 140)
-
-
-ctx.pencilTo(10, 8, 300, '#1915e7', 450, 220, 200, -190, 240, 125, 100, 140)
-
-ctx.globalCompositeOperation = 'multiply';
-
-ctx.pencilTo(10, 8, 200, '#ccfc0e', 500, 120, 300, -120, 140, 125, 100, 140)
-
-ctx.globalCompositeOperation = 'normal';
-
-ctx.pencilTo(10, 8, 400, '#DB4C40', 800, 90, -300, 100, 0, 0, 0, 0)
-
-//ctx.pencilTo(7, 2, 50, 'white', 4, 100, 100, 100, 100, 200, 25, 100, 100)
-
-
-
-ctx.globalAlpha = 1
-
-
-
-
-
-let eyeGap = rand(30,60)
-let eyeFurthest = [rand(130,150), rand(0,40)]
-
-
-let colors = ['#cdfe0e', '#99e446', '#edb056', '#3c83fd', '#7d4030']
-let colorSelection = rand(0, 4)
-
-
-
-
-//ctx.transform(1, 0, 0, 1, 0, 0);
-//Draw Clip Path
-//Start Clip 
-
-
-ctx.save();
-//ctx.scale(0.7, 1);
-//ctx.translate(250, 0)
-ctx.beginPath();
-ctx.moveTo(center, center);
-ctx.move(eyeGap, 0)
-ctx.lineCurved(eyeFurthest[0], -eyeFurthest[1], 50, -120)
-ctx.reCenter()
-ctx.move(eyeGap, 0)
-ctx.lineCurved(eyeFurthest[0], -eyeFurthest[1], 90, 60)
-
-ctx.clip();
-
-let eyeSize = rand(35, 50)
-let pupilSize = rand(15, 30)
-
-ctx.reCenter()
-ctx.move(100+eyeGap/4, -30)
-
-var startX = pointArray[pointArray.length-1][0]
-var startY = pointArray[pointArray.length-1][1]
-var grd = ctx.createLinearGradient(0, startY-100, 0, startY);
-
-grd.addColorStop(0, "#000000");
-grd.addColorStop(1, colors[colorSelection]);
-
-
-ctx.circle(eyeSize, true, grd)
-ctx.circle(pupilSize, true, '#000000')
-
-
-
-
-ctx.move(-20, -10)
-var ovalRandWidth = rand(12,20)
-var ovalRandHeight = rand(8,12)
-ctx.oval(ovalRandWidth, ovalRandHeight, -45, true, '#ffffff')
-
-ctx.move(40, 30)
-var ovalRandWidth2 = rand(6, 10)
-var ovalRandHeight2 = rand(3, 7)
-ctx.oval(ovalRandWidth2, ovalRandHeight2, -45, true, '#ffffff')
-
-ctx.restore();
-
-
-//ctx.scale(1, 1);
-
-
-ctx.reCenter()
-
-
-
-
-//Draw Clip Path
-//Start Clip 
-ctx.save();
-//Left Eye Shape 
-ctx.beginPath();
-ctx.moveTo(center, center);
-ctx.move(-eyeGap, 0)
-ctx.lineCurved(-eyeFurthest[0], -eyeFurthest[1], -50, -120)
-ctx.reCenter()
-ctx.move(-eyeGap, 0)
-ctx.lineCurved(-eyeFurthest[0], -eyeFurthest[1], -90, 60)
-
-
-ctx.clip();
-
-ctx.reCenter()
-ctx.move(-100-eyeGap/4, -30)
-ctx.circle(eyeSize, true, grd)
-ctx.circle(pupilSize, true, '#000000')
-
-ctx.move(-20, -10)
-var ovalRandWidth = rand(12,20)
-var ovalRandHeight = rand(8,12)
-ctx.oval(ovalRandWidth, ovalRandHeight, -45, true, '#ffffff')
-ctx.move(40, 30)
-var ovalRandWidth2 = rand(6, 10)
-var ovalRandHeight2 = rand(3, 7)
-ctx.oval(ovalRandWidth2, ovalRandHeight2, -45, true, '#ffffff')
-
-
-ctx.restore();
-
-
-let randPoint1 = rand(45,55)
-let randPoint2 = rand(105,130)
-
-ctx.reCenter()
-ctx.move(-eyeGap, 0)
-ctx.lineCurvedStroke("#2b909d", 4, 20, -eyeFurthest[0], -eyeFurthest[1], -randPoint1, -randPoint2, -eyeFurthest[0], -eyeFurthest[1], true)
-ctx.move(-10, -20)
-ctx.lineCurvedStroke("#2b909d", 1, 100, -eyeFurthest[0]+10, -eyeFurthest[1], -randPoint1, -randPoint2, -eyeFurthest[0], -eyeFurthest[1])
-
-
-ctx.reCenter()
-ctx.move(eyeGap, 0)
-ctx.lineCurvedStroke("#2b909d", 4, 20, eyeFurthest[0], -eyeFurthest[1], randPoint1, -randPoint2, eyeFurthest[0], -eyeFurthest[1], true)
-ctx.move(10, -20)
-ctx.lineCurvedStroke("#2b909d", 1, 100, eyeFurthest[0]-10, -eyeFurthest[1], randPoint1, -randPoint2, eyeFurthest[0], -eyeFurthest[1])
-
-
-
-
-ctx.reCenter()
-ctx.move(-eyeGap, 0)
-ctx.lineCurvedStroke("#2b909d", 1, 100, -eyeFurthest[0], -eyeFurthest[1], -90, 60, -eyeFurthest[0], -eyeFurthest[1], true)
-
-ctx.reCenter()
-ctx.move(eyeGap, 0)
-ctx.lineCurvedStroke("#2b909d", 1, 100, eyeFurthest[0], -eyeFurthest[1], 90, 60, eyeFurthest[0], -eyeFurthest[1], true)
-
-
-
-
-
-let eyebrowHeight = rand(50, 80)
-
-let eyebrowArcUp = rand(50, 180)
-let eyebrowArcDown = rand(50, 180)
-
-
-
-
-ctx.reCenter()
-ctx.move(eyeGap-20, -eyebrowHeight)
-ctx.lineCurvedStroke("#2b909d", 4, -50, 180, -eyebrowHeight, 90, -eyebrowArcUp, eyebrowArcDown, -eyebrowHeight)
-
-ctx.reCenter()
-ctx.move(-eyeGap+20, -eyebrowHeight)
-ctx.lineCurvedStroke("#2b909d", 4, -50, -180, -eyebrowHeight, -90, -eyebrowArcUp, -eyebrowArcDown, -eyebrowHeight)
-
-
-ctx.reCenter()
-
-let nosePosition = rand(40, 55)
-ctx.move(0, nosePosition)
-ctx.lineCurvedStroke(2, 100, 0, 15, 5, 0, 0, 15)
-
-
-
-
-ctx.reCenter()
-
-let mouthPosition = rand(85, 105)
-
-let mouthWidth = rand(30, 60)
-ctx.move(-mouthWidth, mouthPosition)
-
-let mouthAngle = rand(-15, 15)
-ctx.lineCurvedStroke("#2b909d", 2, 100, mouthWidth*2, mouthAngle, 5, 0, 0, 15)
-
-
-let jawAngle = rand(70, 90)
-let jawAngle2 = rand(260, 300)
-let jawAngle3 = rand(150, 190)
-let jawAngle4 = rand(150, 250)
-
-ctx.reCenter()
-ctx.move(-50, 150)
-ctx.move(250, -250)
-ctx.lineCurvedStroke("#2b909d", 3, 400, -200, jawAngle2, jawAngle, jawAngle3, -200, jawAngle2)
-ctx.move(-400, 0)
-ctx.lineCurvedStroke("#2b909d", 3, 400, 200, jawAngle2, -jawAngle, jawAngle3, 200, jawAngle2)
-
-
-
-
-
-</script></body></html>

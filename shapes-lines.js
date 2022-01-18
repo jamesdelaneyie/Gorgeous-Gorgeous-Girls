@@ -1,4 +1,9 @@
-ctx.circle = function(width, fill, fillColor) {
+ctx.recenter = function() {
+    ctx.moveTo(center, center)
+    pointArray.push([center, center])
+  }
+  
+  ctx.circle = function(width, fill, fillColor) {
     ctx.beginPath();
   
     let startX = pointArray[pointArray.length-1][0]
@@ -293,8 +298,8 @@ ctx.circle = function(width, fill, fillColor) {
   
   
   
-  ctx.pencilTo = function(width, endWidth, iterations, color, startX, startY, endX, endY, cp1, cp2, cp3, cp4) {
-        
+  ctx.pencilTo = function(width, endWidth, iterations, color, startX, startY, endX, endY, cp1, cp2, cp3, cp4, circle, size) {
+    
     let newEndX = startX + endX
     let newEndY = startY + endY
   
@@ -313,13 +318,15 @@ ctx.circle = function(width, fill, fillColor) {
     var widthFactor = (width - endWidth) / bezierPoints.length
   
     ctx.moveTo(startX, startY);
+
+    pointArray.push([newEndX, newEndY])
   
     for (var j=0; j<iterations; j++ ) {
   
       for(var i=0; i<bezierPoints.length; i++) {
         
         var drawWidth = width - (widthFactor * i)
-  
+
         var x = bezierPoints[i].x;
         var y = bezierPoints[i].y;
   
@@ -362,7 +369,7 @@ ctx.circle = function(width, fill, fillColor) {
   
         var offsetX = rand(-radius, radius);
         var offsetY = rand(-radius, radius);
-  
+
         if(j > iterations*0.70) {
           offsetY = -drawWidth
         } 
@@ -373,12 +380,19 @@ ctx.circle = function(width, fill, fillColor) {
 
         if(i > 1) {
           ctx.fillStyle = color
-          ctx.fillRect(x0 + offsetX, y0 + offsetY, 1, 1);
+          if(size) {
+            ctx.fillRect(x0 + offsetX, y0 + offsetY, size, size);
+          } else {
+            ctx.fillRect(x0 + offsetX, y0 + offsetY, 1, 1);
+          }
+         
         }
   
   
       }
   
     }
+
+    ctx.globalAlpha = 1
   
   }

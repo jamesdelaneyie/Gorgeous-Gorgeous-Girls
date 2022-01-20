@@ -31,21 +31,129 @@
         resolution: 1,
         forceCanvas: false,
         roundPixels: true,
-        preserveDrawingBuffer: true,
       });
       document.body.appendChild(app.view);
 
       let bk = new PIXI.Graphics();
-      bk.beginFill(0xffffff);
+      bk.beginFill(0xf6eeeb);
       bk.drawRect(0, 0, 500, 500);
       bk.endFill();
-
-      let counter = 0;
 
       app.stage.addChild(bk)
 
       var container = new PIXI.ParticleContainer(500000);
       app.stage.addChild(container)
+
+
+
+
+      var drawLeftHair = function(){
+        var template = new PIXI.Graphics();
+      template.beginFill(0x3a0909);
+      template.drawCircle(0, 0, 15);
+      template.endFill();
+      var texture = app.renderer.generateTexture(template);
+      var circle = new PIXI.Sprite(texture);
+
+
+
+      var randEndX = rand(-200, 150)
+      var randEndXP = rand(-200, 250)
+
+      var randEndYP = rand(-50, 50)
+      var randEndX1 = rand(-100, 100)
+
+      var randEndXX = rand(0, 100)
+
+      //var randEndYY = rand(250, 500)
+
+      var width = 70
+      var endWidth = 70
+
+      var bezier = [{x: randEndX1, y: -100}, {x: 0, y: randEndYP}, {x: randEndXP, y:350}, {x:randEndX, y:450}]
+    
+      var bezierPoints = findCBezPoints(bezier);
+    
+      var points = [null, null, null];
+    
+      var widthFactor = (width - endWidth) / bezierPoints.length
+      
+      var iterations = 3
+    
+      for (var j=0; j<iterations; j++ ) {
+    
+        for(var i=0; i<bezierPoints.length; i++) {
+          
+          var drawWidth = width - (widthFactor * i)
+
+          var x = bezierPoints[i].x;
+          var y = bezierPoints[i].y;
+    
+          points[0] = points[1];
+          points[1] = points[2];
+          points[2] = { X:x, Y:y};
+    
+          if(points[0] == null)
+              continue;
+    
+          var p0 = points[0];
+          var p1 = points[1];
+          var p2 = points[2];
+    
+          var x0 = (p0.X + p1.X) / 2;
+          var y0 = (p0.Y + p1.Y) / 2;
+          
+          var alpha = perlin.get(x0, y0)
+          
+          if(alpha < 0.1) {
+            alpha = 0.1
+          }
+
+          alpha = 1
+    
+          
+          var radius = drawWidth
+    
+          if(width == 1) {
+            radius = radius / 20
+          }
+    
+          var offsetX = rand(-radius, radius);
+          var offsetY = rand(-radius, radius);
+
+          /*if(j > iterations*0.70) {
+            offsetY = -drawWidth
+          } 
+          if (j > iterations*0.85) {
+            offsetY = drawWidth
+          }
+          */
+
+          
+          let circleRadius = radius * Math.sqrt(Math.random())
+          let theta = Math.random() * 2 * Math.PI
+
+          x0 = x0 + radius * Math.cos(theta)
+          y0 = y0 + radius * Math.sin(theta)
+
+
+          if(i > 1) {
+            let duplicate = new PIXI.Sprite(circle.texture);
+            duplicate.x = x0
+            duplicate.y = y0
+            duplicate.alpha = alpha
+            container.addChild(duplicate)
+          
+          }
+  
+    
+        }
+    
+      }
+
+      var containerTwo = new PIXI.ParticleContainer(500000);
+      app.stage.addChild(containerTwo)
+
 
       var template = new PIXI.Graphics();
       template.beginFill(0xaa0000);
@@ -56,14 +164,13 @@
 
       app.stage.addChild(template);
 
-      var containerTwo = new PIXI.ParticleContainer(500000);
-      app.stage.addChild(containerTwo)
-      containerTwo.blendMode = PIXI.BLEND_MODES.MULTIPLY
 
-      var width = 0
-      var endWidth = 500
 
-      var bezier = [{x: 150, y: 150}, {x: 0, y: 0}, {x: 100, y:-100}, {x:470, y:470}]
+
+      var width = 100
+      var endWidth = 100
+
+      var bezier = [{x: randEndX1, y: -100}, {x: 0, y: 50}, {x: randEndXP, y:350}, {x:randEndX-30, y:450}]
     
       var bezierPoints = findCBezPoints(bezier);
     
@@ -71,7 +178,7 @@
     
       var widthFactor = (width - endWidth) / bezierPoints.length
       
-      var iterations = 200
+      var iterations = 20
     
       for (var j=0; j<iterations; j++ ) {
     
@@ -121,111 +228,7 @@
             offsetY = drawWidth
           }
           
-          let circleRadius = radius * Math.sqrt(Math.random())
-          let theta = Math.random() * 2 * Math.PI
 
-          x0 = x0 + radius * Math.cos(theta)
-          y0 = y0 + radius * Math.sin(theta)
-
-          if(i < bezierPoints.length*0.2) {
-            alpha = 0 
-          }
-
-          counter++;
-
-
-          if(i > 1) {
-            let duplicate = new PIXI.Sprite(circle.texture);
-            duplicate.x = x0
-            duplicate.y = y0
-            duplicate.alpha = alpha
-            //duplicate.blendMode = PIXI.BLEND_MODES.COLOR_BURN
-            container.addChild(duplicate)
-          
-          }
-  
-    
-        }
-    
-      }
-
-      
-
-
-      var template = new PIXI.Graphics();
-      template.beginFill(0xff0000);
-      template.drawRect(0, 0, 1, 1);
-      template.endFill();
-      
-      var texture = app.renderer.generateTexture(template);
-      var circle = new PIXI.Sprite(texture);
-
-      app.stage.addChild(template);
-
-      var width = 0
-      var endWidth = 50
-
-      var bezier = [{x: 150, y: 150}, {x: 0, y: 0}, {x: 100, y:-100}, {x:450, y:450}]
-    
-      var bezierPoints = findCBezPoints(bezier);
-    
-      var points = [null, null, null];
-    
-      var widthFactor = (width - endWidth) / bezierPoints.length
-      
-      var iterations = 50
-    
-      for (var j=0; j<iterations; j++ ) {
-    
-        for(var i=0; i<bezierPoints.length; i++) {
-          
-          var drawWidth = width - (widthFactor * i)
-
-          var x = bezierPoints[i].x;
-          var y = bezierPoints[i].y;
-    
-          points[0] = points[1];
-          points[1] = points[2];
-          points[2] = { X:x, Y:y};
-    
-          if(points[0] == null)
-              continue;
-    
-          var p0 = points[0];
-          var p1 = points[1];
-          var p2 = points[2];
-    
-          var x0 = (p0.X + p1.X) / 2;
-          var y0 = (p0.Y + p1.Y) / 2;
-          
-          var alpha = perlin.get(x0, y0)
-          
-          if(alpha < 0.1) {
-            alpha = 0.1
-          }
-
-          alpha = 1
-    
-          if(i > bezierPoints.length*0.8) {
-            let fader = (drawWidth/i)*10
-            //alpha = alpha - fader
-          }
-
-          var radius = drawWidth
-    
-          if(width == 1) {
-            radius = radius / 20
-          }
-    
-          var offsetX = rand(-radius, radius);
-          var offsetY = rand(-radius, radius);
-
-          if(j > iterations*0.70) {
-            offsetY = -drawWidth
-          } 
-          if (j > iterations*0.85) {
-            offsetY = drawWidth
-          }
           
           let circleRadius = radius * Math.sqrt(Math.random())
           let theta = Math.random() * 2 * Math.PI
@@ -233,14 +236,12 @@
           x0 = x0 + radius * Math.cos(theta)
           y0 = y0 + radius * Math.sin(theta)
 
-          counter++;
 
           if(i > 1) {
             let duplicate = new PIXI.Sprite(circle.texture);
             duplicate.x = x0
             duplicate.y = y0
             duplicate.alpha = alpha
-            //duplicate.blendMode = PIXI.BLEND_MODES.MULTIPLY
             containerTwo.addChild(duplicate)
           
           }
@@ -250,28 +251,24 @@
     
       }
 
-      
-
-
-
-
 
 
       var template = new PIXI.Graphics();
-      template.beginFill(0x00ff00);
-      template.drawRect(0, 0, 1, 1);
+      template.beginFill(0xff0000);
+      template.drawCircle(0, 0, 0.5);
       template.endFill();
-
       var texture = app.renderer.generateTexture(template);
       var circle = new PIXI.Sprite(texture);
 
       app.stage.addChild(template);
 
 
-      var width = 0
-      var endWidth = 10
 
-      var bezier = [{x: 450, y: 150}, {x: 450, y: 130}, {x: 100, y:-100}, {x:100, y:450}]
+
+      var width = rand(1, 3)
+      var endWidth = width+2;
+
+      var bezier = [{x: randEndX1+110, y: -100}, {x: 100, y: 50}, {x: randEndXP + 90, y:350}, {x:randEndX+110, y:450}]
     
       var bezierPoints = findCBezPoints(bezier);
     
@@ -279,7 +276,7 @@
     
       var widthFactor = (width - endWidth) / bezierPoints.length
       
-      var iterations = 200
+      var iterations = 0//rand(10, 20)
     
       for (var j=0; j<iterations; j++ ) {
     
@@ -304,8 +301,7 @@
           var x0 = (p0.X + p1.X) / 2;
           var y0 = (p0.Y + p1.Y) / 2;
           
-          var alpha = 0
-          //alpha = perlin.get(x0, y0)
+          var alpha = perlin.get(x0, y0)
           
           if(alpha < 0.1) {
             alpha = 0.1
@@ -313,11 +309,7 @@
 
           //alpha = 1
     
-          if(i > bezierPoints.length*0.8) {
-            let fader = (drawWidth/i)*10
-            //alpha = alpha - fader
-          }
-
+          
           var radius = drawWidth
     
           if(width == 1) {
@@ -334,21 +326,21 @@
             offsetY = drawWidth
           }
           
+
+          
           let circleRadius = radius * Math.sqrt(Math.random())
           let theta = Math.random() * 2 * Math.PI
 
           x0 = x0 + radius * Math.cos(theta)
           y0 = y0 + radius * Math.sin(theta)
 
-          counter++;
 
           if(i > 1) {
             let duplicate = new PIXI.Sprite(circle.texture);
             duplicate.x = x0
             duplicate.y = y0
             duplicate.alpha = alpha
-            //duplicate.blendMode = PIXI.BLEND_MODES.MULTIPLY
-            container.addChild(duplicate)
+            containerTwo.addChild(duplicate)
           
           }
   
@@ -357,9 +349,128 @@
     
       }
 
-      console.log(counter)
 
+      }
+
+      drawLeftHair();
+
+
+      drawLeftHair();
+
+      var containerThree = new PIXI.ParticleContainer(500000);
+      app.stage.addChild(containerThree)
+
+      var drawLeftHairTwo = function(){
+
+
+
+
+
+      var template = new PIXI.Graphics();
+      template.beginFill(0x3a0909);
+      template.drawCircle(0, 0, 0.5);
+      template.endFill();
+      var texture = app.renderer.generateTexture(template);
+      var circle = new PIXI.Sprite(texture);
+
+
+      /*var template = new PIXI.Graphics();
+      template.beginFill(0x000000);
+      template.drawCircle(270, 160, 10);
+      template.endFill();
+      app.stage.addChild(template);*/
+
+
+
+
+      var width = 3
+      var endWidth = 0
+    
+      startX = rand(200, 300)
+      OffX = rand(200, 300)
+
+      randEndX = rand(250, 450)
+      randEndY = rand(180, 350);
+
+      randPointX = rand(150, 450)
+
+      var bezier = [{x: startX, y: -100}, {x: OffX, y: -100}, {x: randPointX, y:150}, {x:randEndX, y:randEndY}]
+    
+      var bezierPoints = findCBezPoints(bezier);
+    
+      var points = [null, null, null];
+    
+      var widthFactor = (width - endWidth) / bezierPoints.length
       
+      var iterations = 20//rand(10, 20)
+    
+      for (var j=0; j<iterations; j++ ) {
+    
+        for(var i=0; i<bezierPoints.length; i++) {
+          
+          var drawWidth = width - (widthFactor * i)
+
+          var x = bezierPoints[i].x;
+          var y = bezierPoints[i].y;
+    
+          points[0] = points[1];
+          points[1] = points[2];
+          points[2] = { X:x, Y:y};
+    
+          if(points[0] == null)
+              continue;
+    
+          var p0 = points[0];
+          var p1 = points[1];
+          var p2 = points[2];
+    
+          var x0 = (p0.X + p1.X) / 2;
+          var y0 = (p0.Y + p1.Y) / 2;
+          
+          var alpha = perlin.get(x0, y0)
+          
+         
+
+          //alpha = 1
+    
+          
+          var radius = drawWidth
+    
+          if(width == 1) {
+            radius = radius / 20
+          }
+    
+          var offsetX = rand(-radius, radius);
+          var offsetY = rand(-radius, radius);
+
+
+          
+          let circleRadius = radius * Math.sqrt(Math.random())
+          let theta = Math.random() * 2 * Math.PI
+
+          x0 = x0 + radius * Math.cos(theta)
+          y0 = y0 + radius * Math.sin(theta)
+
+
+          if(i > 1) {
+            let duplicate = new PIXI.Sprite(circle.texture);
+            duplicate.x = x0
+            duplicate.y = y0
+            duplicate.alpha = alpha
+            containerThree.addChild(duplicate)
+          
+          }
+  
+    
+        }
+    
+      }
+
+
+      }
+      
+      drawLeftHairTwo();
+
       </script>
   </body>
 </html>

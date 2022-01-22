@@ -22,8 +22,11 @@
     <script src="curves.js"></script>
     <script src="perlin.js"></script>
     <script src="numbers.js"></script>
+    <script src="chroma.js"></script>
 
     <script>      
+
+
       let app = new PIXI.Application({ 
         width: 450, 
         height: 350,
@@ -34,29 +37,94 @@
       });
       document.body.appendChild(app.view);
 
-      let bk = new PIXI.Graphics();
-      bk.beginFill(0xf6eeeb);
-      bk.drawRect(0, 0, 500, 500);
-      bk.endFill();
 
-      app.stage.addChild(bk)
-
-      var container = new PIXI.ParticleContainer(500000);
-      app.stage.addChild(container)
 
       var counter = 0
       var counter2 = 0
 
+     
+      let randomColor = rand(0,360);
+
+      let hairColor = chroma(randomColor, 0.3, 0.5, 'hsl');
+      let highlightColor = chroma(randomColor + 115, 0.5, 0.6, 'hsl');
+      var multiplyColor = chroma.blend(hairColor, highlightColor, 'multiply');
+      //var multiplyColor = chroma.blend(hairColor, highlightColor, 'burn');
+      //var multiplyColor = chroma.blend(hairColor, highlightColor, 'overlay');
+
+      hairColors = multiplyColor
+      hairColorsDark = chroma.scale([hairColors, 'black']).colors(7);
+      hairColorsLight = chroma.scale([hairColors, 'white']).colors(5);
+      hairColorsLightTwo = chroma.scale([hairColors, 'white']).colors(30);
+      let backgroundColor = hairColorsLightTwo[28];
+      backgroundColor = PIXI.utils.string2hex(backgroundColor)
+
+
+      let bk = new PIXI.Graphics();
+      bk.beginFill(backgroundColor);
+      bk.drawRect(0, 0, 500, 500);
+      bk.endFill();
+      app.stage.addChild(bk)
+
+      var container = new PIXI.ParticleContainer(500000);
+      app.stage.addChild(container)
+      
+
+      let hairColor1 = PIXI.utils.string2hex(hairColorsDark[3])
+      let hairColor2 = PIXI.utils.string2hex(hairColorsDark[2])
+      let hairColor3 = PIXI.utils.string2hex(hairColorsDark[1])
+      let hairColor4 = PIXI.utils.string2hex(hairColorsDark[0])
+      let hairColor5 = PIXI.utils.string2hex(hairColorsLight[1])
+
+      highlightColor = PIXI.utils.string2hex(highlightColor)
+
+      //console.log(hairColor1)
+      
+      let startColor = chroma(randomColor, 0.3, 0.4, 'hsl');
+      let endColor = chroma(randomColor + 115, 0.5, 0.7, 'hsl');
+      startColor = chroma(startColor).hex()
+      endColor = chroma(endColor).hex()
+      startColor = PIXI.utils.string2hex(startColor)
+      endColor = PIXI.utils.string2hex(endColor)
+
+      var template = new PIXI.Graphics();
+      template.beginFill(startColor);
+      template.drawCircle(250, 180, 100);
+      template.endFill();
+      app.stage.addChild(template)
+
+      var template = new PIXI.Graphics();
+      template.beginFill(endColor);
+      template.drawCircle(350, 180, 50);
+      template.endFill();
+      app.stage.addChild(template)
+
+      multiplyColor = chroma(multiplyColor).hex()
+      multiplyColor = PIXI.utils.string2hex(multiplyColor);
+      var template = new PIXI.Graphics();
+      console.log(multiplyColor)
+      template.beginFill(multiplyColor);
+      template.drawRect(250, 175, 170, 10);
+      template.endFill();
+      app.stage.addChild(template)
+
+
+
+
+
+
+     
+
+
       var drawLeftHair = function(){
         var template = new PIXI.Graphics();
         if(counter == 1) {
-          template.beginFill(0x3a0909);
+          template.beginFill(hairColor2);
         } else {
-          template.beginFill(0x280a0a);
+          template.beginFill(hairColor1);
         }
         counter++
         
-      //template.beginFill(0x3a0909);
+      
       template.drawCircle(0, 0, 15);
       template.endFill();
       var texture = app.renderer.generateTexture(template);
@@ -168,14 +236,14 @@
       var template = new PIXI.Graphics();
 
       if(counter2 == 1) {
-         template.beginFill(0x6d0303);
+         template.beginFill(hairColor3);
         } else {
-          template.beginFill(0xaa0000);
+          template.beginFill(hairColor4);
         }
         counter2++
   
 
-      //
+      
       template.drawCircle(0, 0, 0.5);
       template.endFill();
       var texture = app.renderer.generateTexture(template);
@@ -273,7 +341,7 @@
 
 
       var template = new PIXI.Graphics();
-      template.beginFill(0xff0000);
+      template.beginFill(hairColor5);
       template.drawCircle(0, 0, 0.5);
       template.endFill();
       var texture = app.renderer.generateTexture(template);
@@ -369,7 +437,7 @@
       }
 
       var template = new PIXI.Graphics();
-      template.beginFill(0xff0000);
+      template.beginFill(hairColor5);
       template.drawCircle(0, 0, 0.5);
       template.endFill();
       var texture = app.renderer.generateTexture(template);
@@ -470,8 +538,10 @@
 
       drawLeftHair();
 
-
       drawLeftHair();
+
+
+
 
       var containerThree = new PIXI.ParticleContainer(500000);
       app.stage.addChild(containerThree)
@@ -480,24 +550,14 @@
 
 
 
-
-
+        
+      //flick
       var template = new PIXI.Graphics();
-      template.beginFill(0x3a0909);
+      template.beginFill(hairColor2);
       template.drawCircle(0, 0, 0.5);
       template.endFill();
       var texture = app.renderer.generateTexture(template);
       var circle = new PIXI.Sprite(texture);
-
-
-      /*var template = new PIXI.Graphics();
-      template.beginFill(0x000000);
-      template.drawCircle(270, 160, 10);
-      template.endFill();
-      app.stage.addChild(template);*/
-
-
-
 
       var width = 3
       var endWidth = 0
@@ -545,11 +605,6 @@
           
           var alpha = perlin.get(x0, y0)
           
-         
-
-          //alpha = 1
-    
-          
           var radius = drawWidth
     
           if(width == 1) {
@@ -582,10 +637,13 @@
     
       }
 
+      }
 
+      var addHair = rand(0,1)
+      if(addHair){
+        drawLeftHairTwo();
       }
       
-      drawLeftHairTwo();
 
       </script>
   </body>

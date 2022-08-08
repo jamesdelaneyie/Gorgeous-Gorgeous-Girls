@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@pixi/picture": "^3.0.6",
+    "pixi.js": "^6.5.1"
+  }
+}

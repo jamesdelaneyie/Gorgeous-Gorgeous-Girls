@@ -17,7 +17,7 @@
 </head>
 
 <body>
-
+    <div id="easing-wrapper"></div>
     <img src="trace.png" style="height:400px;width:400px;object-fit: cover;">
     <img src="trace-2.png" style="height:400px;width:400px;object-fit: cover;">
     <img src="trace-3.png" style="height:400px;width:400px;object-fit: cover;">
@@ -29,9 +29,67 @@
     <script src="perlin.js"></script>
     <script src="numbers.js"></script>
     <script src="bezier-easing.js"></script>
+    <script src="index.js"></script>
     <script src="chroma.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-filters@latest/dist/pixi-filters.js"></script>
+
 
     <script>
+
+        
+        var drawSVG = function(points, width, ipo){
+
+            function addPoints (a, b) {
+                return [ a[0] + b[0], a[1] + b[1] ];
+            }
+            function project (p) {
+                return [  1 * p[0], 100 - p[1] ];
+            }
+
+            var svg = "<svg width='"+width+"'' height='100' style='background:#111'>";
+
+            // curve
+            svg += "<path fill='none' stroke-width='2' stroke='#f00' d='";
+            var i, p, point, prev = points[0];
+            for (i = 1; i < points.length; i++) {
+                point = points[i];
+                svg += " M "+project(prev.p)+" C"+project(addPoints(prev.p, prev.upper||[0,0]))+" "+project(addPoints(point.p, point.lower||[0,0]))+" "+project(point.p);
+                prev = point;
+            }
+            svg += "' />";
+
+            // points and handles
+            for (i = 0; i < points.length; i++) {
+                point = points[i];
+                p = project(point.p);
+                var clr = "#f00";
+                svg += "<circle cx='"+p[0]+"' cy='"+p[1]+"' r='3' fill='"+clr+"' />";
+                [point.lower, point.upper].filter(function (o) { return o; }).map(function (handle) {
+                    handle = project(addPoints(handle, point.p));
+                    var d = "M "+p+" L"+handle;
+                    svg += "<path stroke='"+clr+"' d='"+d+"' />";
+                    svg += "<circle cx='"+handle[0]+"' cy='"+handle[1]+"' r='2' fill='"+clr+"' />";
+                });
+            }
+
+            // interpolation sampling
+            for (var x=0; x<width; x += 1) {
+                var y = ipo(x);
+                p = project([ x, y ]);
+                //console.log(p)
+                svg += "<circle cx='"+p[0]+"' cy='"+p[1]+"' r='1' fill='#ffa' />";
+            }
+
+            svg += "</svg>";
+
+            let svgWrapper = document.getElementById("easing-wrapper");
+            svgWrapper.innerHTML = svg;
+
+        }
+       
+
+       
+
         let app = new PIXI.Application({
             width: 400,
             height: 400,
@@ -43,8 +101,7 @@
         document.body.appendChild(app.view);
 
 
-        var counter = 0
-        var counter2 = 0
+       
 
 
         let randomColor = rand(0, 360);
@@ -53,16 +110,14 @@
         let highlightColor = chroma(randomColor + 230, 0.8, 0.6, 'hsl');
         var multiplyColor = chroma.blend(hairColor, highlightColor, 'multiply');
         
-        var eyebrowColor = chroma.blend(hairColor, highlightColor, 'multiply');
-
         hairColors = multiplyColor
         hairColorsDark = chroma.scale([hairColors, 'black']).colors(4);
         hairColorsLight = chroma.scale([hairColors, 'white']).colors(5);
-        hairColorsLightTwo = chroma.scale([hairColors, 'white']).colors(30);
-        let backgroundColor = hairColorsLightTwo[28];
+        hairColorsLightTwo = chroma.scale([hairColors, 'white']).colors(35);
+        
+        
+        let backgroundColor = hairColorsLightTwo[32];
         backgroundColor = PIXI.utils.string2hex(backgroundColor)
-
-
         let bk = new PIXI.Graphics();
         bk.beginFill(backgroundColor);
         bk.drawRect(0, 0, 500, 500);
@@ -111,8 +166,6 @@
 
         
 
-        eyebrowColor = chroma(multiplyColor).hex()
-
         
 
 
@@ -120,14 +173,16 @@
 
         
         class pencil {
-            constructor({startWidth,endWidth,shape,iterations,color,alpha,alphaEasing,nib,nibOption,angle,fadeAngle,widthArray,pressureArray}) {
+            constructor({startWidth,endWidth,shape,iterations,color,alpha,alphaEasing,reverse,reverseLine,nib,nibOption,angle,fadeAngle,widthArray,pressureArray}) {
                 this.startWidth = startWidth || 1;
                 this.endWidth = endWidth || 1;
                 this.shape = shape;
                 this.iterations = iterations || 1;
                 this.color = color || '#000000';
                 this.alpha = alpha || 1;
-                this.alphaEasing = 'linear';
+                this.alphaEasing = alphaEasing || 'none';
+                this.reverse = reverse || false;
+                this.reverseLine = reverseLine || false;
                 this.nib = nib;
                 this.nibOption = nibOption || this.startWidth;
                 this.angle = 0;
@@ -138,20 +193,33 @@
             }
         }
 
-        class line {
-            constructor({x,y,cp1,cp2,endX,endY,cp3,cp4}) {
-                this.x = x;
-                this.y = y;
-                this.cp1 = cp1;
-                this.cp2 = cp2;
-                this.endX = endX;
-                this.endY = endY;
-                this.cp3 = cp3;
-                this.cp4 = cp4;
-            }
+
+
+        let getPositionOnLine = function(line, percent) {
+            bezierPoints = createBezierPoints(line);
+            pointOnLine = bezierPoints.length * percent;
+            return bezierPoints[Math.floor(pointOnLine)];
         }
 
-
+        let getDrawPosition = function(drawPoint, pencil, offsetX, offsetY, radius) {
+            var drawX, drawY;
+            if(pencil.nib == 'circle') {
+                var angle = Math.random() * Math.PI * 2;
+                drawX = drawPoint[0] + offsetX * Math.sin(angle);
+                drawY = drawPoint[1] + offsetX * Math.cos(angle);
+            } else if (pencil.nib == 'oval') {
+                var firstAngle = pencil.startWidth
+                var secondAngle = pencil.nibOption
+                r = firstAngle * Math.sqrt(Math.random(0,.1))
+                fi = 2 * Math.PI * Math.random(0,.1)
+                drawX = drawPoint[0] + r * Math.cos(fi)
+                drawY = drawPoint[1] + secondAngle / firstAngle *  r * Math.sin(fi)
+            } else {
+                drawX = drawPoint[0] + offsetX;
+                drawY = drawPoint[1] + offsetY;
+            }
+            return [drawX, drawY];
+        }
 
 
         let drawLine = function(line, pencil, layer) {
@@ -166,6 +234,39 @@
 
             //linear easing
             var easing = bezier(0, 0, 1, 1);
+            if(pencil.alphaEasing == 'linear') {
+                easing = bezier(0, 0, 1, 1);
+            }
+            if(pencil.alphaEasing == 'easeInExpo') {
+                //easeInCubic
+                easing = bezier(0.32, 0, 0.67, 0);
+            }
+
+            let ipo
+            //console.log(bezierPoints.length)
+            if(pencil.iterations == 1) {
+                xPoint1 = 0
+                xPoint2 = parseInt((bezierPoints.length / 3) * 1)
+                xPoint3 = parseInt((bezierPoints.length / 3) * 2)
+                xPoint4 = parseInt((bezierPoints.length / 3) * 3)
+                console.log(bezierPoints.length)
+                console.log(xPoint1,xPoint2,xPoint3,xPoint4)
+                var points = [
+                    { "p": [xPoint1, 0], "upper": [0, 0] },
+                    { "p": [xPoint2, 100], "lower": [-20, 0], "upper": [0, 0] },
+                    { "p": [xPoint3, 0], "lower": [-20, 0], "upper": [20, 0] },
+                    { "p": [xPoint4, 100] }
+                ]
+                console.log(points)
+                ipo = new IPO(points)
+                drawSVG(points, bezierPoints.length, ipo)
+            }
+
+            //var value = ipo(135);
+            
+           
+            //var easing = bezier(0.33, 1, 0.68, 1)
+            //var easing = bezier(0.16, 1, 0.3, 1)
             //var easing = bezier(0.32, 0, 0.67, 0);
             //var easing = bezier(0.12, 0, 0.39, 0);
             //var easing = bezier(0.64, 0, 0.78, 0);
@@ -186,27 +287,31 @@
             }
             //bezierPoints = newBezierPoints;
 
+            if(pencil.reverseLine == true) {
+                bezierPoints.reverse()
+            }
+
             //Apply perlin noise to each point of the bezier curve
             for (var i = 0; i < bezierPoints.length; i++) {
                 offset = perlin.get(bezierPoints[i].x, bezierPoints[i].y)
-                bezierPoints[i].x = bezierPoints[i].x + (offset*2)
-                bezierPoints[i].y = bezierPoints[i].y + (offset*2)
+                //bezierPoints[i].x = bezierPoints[i].x + (offset*2)
+                //bezierPoints[i].y = bezierPoints[i].y + (offset*2)
             }
+
+            
             
             let dotGraphic = new PIXI.Graphics();
 
-            let pixel = new PIXI.Graphics();
+            /*let pixel = new PIXI.Graphics();
             pixel.beginFill(color, alpha);
             pixel.drawCircle(0, 0, 1);
             pixel.endFill();
-            var texture = app.renderer.generateTexture(pixel);
-            
+            var texture = app.renderer.generateTexture(pixel);*/
+
 
             for (var i=0; i<pencil.iterations; i++ ) {
 
                 var points = [null, null, null];
-
-                console.log(bezierPoints.length)
                 
                 for(var j=0; j<bezierPoints.length; j++) {
 
@@ -216,63 +321,77 @@
                         continue;
                         
                     var drawWidth = pencil.startWidth - (widthFactor * j)
-                    
+                    var radius = drawWidth
                     var percent = (j / bezierPoints.length);
                     var alpha = pencil.alpha
-                    //var easingAlphaPercentage = pencil.alpha * 10
-                    //var alpha = easing(percent/easingAlphaPercentage);
-                    //var alpha = alpha / 10
-                    var radius = drawWidth
-                    var alpha = perlin.get(drawPoint[0], drawPoint[1])
-                    if(alpha < 0.1) {
-                        alpha = 0.1
+
+                    if(pencil.alphaEasing == 'linear' || pencil.alphaEasing == 'easeInExpo') {
+                        var easingAlphaPercentage = pencil.alpha * 10
+                        if(pencil.reverse == true) {
+                            var percent = 1 - percent
+                        }
+                        alpha = easing(percent/easingAlphaPercentage);
+                        alpha = alpha / 10
+                    } else {
+                        alpha = perlin.get(drawPoint[0], drawPoint[1])
+                        if(alpha < 0.1) {
+                            alpha = 0.1
+                        }
                     }
+
+                    if(pencil.iterations == 1) {
+                        //console.log(j)
+                        var alphaValue = ipo(j);
+                        alpha = alphaValue / 1000
+                        alpha = 1
+                        //console.log(j, alphaValue, radius)
+                        var drawSize = ipo(j)
+                        //console.log(drawSize)
+                        radius = drawSize/20
+                    }
+
+                    if(alpha < 0.01) {
+                        //alpha = 0
+                        continue
+                    }
+
+
 
                     //var alphaOffset = perlin.get(drawPoint[0], drawPoint[1])
                     //alphaOffset = Math.abs(alphaOffset)
                     //alpha = alpha - (alphaOffset/easingAlphaPercentage / 2)
-
-                    var offsetX = rand(-radius, radius);
-                    var offsetY = rand(-radius, radius);
-
-                    if(offsetX < 0) {
-                        offsetX = rand(0, radius/4);
+                    /*if(offsetX < 0) {
+                        //offsetX = rand(0, radius/4);
                     }
                     if(offsetY < 0) {
-                        offsetY = rand(0, radius/4);
-                    }
-
-                    var drawX, drawY;
-                
-                    //console.log(pencil.alpha)
-
-                    if(pencil.nib == 'circle') {
-                        var angle = Math.random() * Math.PI * 2;
-                        drawX = drawPoint[0] + offsetX * Math.sin(angle);
-                        drawY = drawPoint[1] + offsetX * Math.cos(angle);
-                    } else if (pencil.nib == 'oval') {
-                        var firstAngle = pencil.startWidth
-                        var secondAngle = pencil.nibOption
-                        r = firstAngle * Math.sqrt(Math.random(0,.1))
-                        fi = 2 * Math.PI * Math.random(0,.1)
-                        drawX = drawPoint[0] + r * Math.cos(fi)
-                        drawY = drawPoint[1] + secondAngle / firstAngle *  r * Math.sin(fi)
+                        //offsetY = rand(0, radius/4);
+                    }*/
+                    //alternative draw mode, concentric style
+                    //drawPosition = getDrawPosition(drawPoint, pencil, radius, offsetX, offsetY);
+                    
+                    if(pencil.iterations == 1) {
+                        fillAreaIterator = parseInt(radius) * 2
                     } else {
-                        drawX = drawPoint[0] + offsetX;
-                        drawY = drawPoint[1] + offsetY;
+                        fillAreaIterator = 1
                     }
 
-                    //let sprite = new PIXI.Sprite(texture);
-                    //sprite.x = drawX;
-                    //sprite.y = drawY;
-                    //sprite.alpha = alpha;
-                    //lineGraphic.addChild(sprite);
+                    if(fillAreaIterator < 1) {
+                        fillAreaIterator = 1
+                    }
 
                     
-                    dotGraphic.beginFill(color, alpha);
-                    dotGraphic.drawCircle(drawX, drawY, 1);
-                    dotGraphic.endFill();
-                    lineGraphic.addChild(dotGraphic);
+                    for(var k=0;k<fillAreaIterator;k++) {
+                        var offsetX = rand(-radius, radius);
+                        var offsetY = rand(-radius, radius);
+                        drawPosition = getDrawPosition(drawPoint, pencil, offsetX, offsetY, radius);
+                        dotGraphic.beginFill(color, alpha);
+                        dotGraphic.drawCircle(drawPosition[0], drawPosition[1], 1);
+                        dotGraphic.endFill();
+                        lineGraphic.addChild(dotGraphic);
+                    }
+                    
+
+                  
 
                             
 
@@ -284,145 +403,16 @@
 
         }
 
+
+
+       
         
 
+        
 
 
         
         var eyeContainer = new PIXI.Container();
-
-        
-
-       
-
-
-
-
-
-
-
-
-
-
-        var pencilTo = function(width, endWidth, iterations, color, startX, startY, endX, endY, cp1, cp2, cp3, cp4, circle, size) {
-          
-          color = PIXI.utils.string2hex(color)
-
-          let newEndX = startX + endX
-          let newEndY = startY + endY
-        
-          let cp1Local = startX + cp1
-          let cp2Local = startY + cp2
-        
-          let cp3Local = startX + cp3
-          let cp4Local = startY + cp4
-        
-          var bezier = [{x: startX, y: startY}, {x: cp1Local, y: cp2Local}, {x: cp3Local, y:cp4Local}, {x:newEndX, y:newEndY}]
-        
-          var bezierPoints = findCBezPoints(bezier);
-        
-          var widthFactor = (width - endWidth) / bezierPoints.length
-          
-          template = new PIXI.Graphics();
-
-
-          for (var j=0; j<iterations; j++ ) {
-
-            var points = [null, null, null];
-  
-            for(var i=0; i<bezierPoints.length; i++) {
-
-              var drawWidth = width - (widthFactor * i)
-
-              var x = bezierPoints[i].x;
-              var y = bezierPoints[i].y;
-        
-              points[0] = points[1];
-              points[1] = points[2];
-              points[2] = { X:x, Y:y};
-        
-              if(points[0] == null)
-                  continue;
-        
-              var p0 = points[0];
-              var p1 = points[1];
-              var p2 = points[2];
-        
-              var x0 = (p0.X + p1.X) / 2;
-              var y0 = (p0.Y + p1.Y) / 2;
-  
-                //ctx.moveTo(x0, y0);
-        
-                var alpha = perlin.get(x0, y0)
-        
-                if(alpha < 0.1) {
-                alpha = 0.1
-                }
-        
-                if(i > bezierPoints.length*0.5 && drawWidth < 1) {
-                let fader = (drawWidth/i)*2
-                //alpha = alpha - fader
-                //console.log(alpha)
-                }
-        
-        //ctx.globalAlpha = alpha
-  
-                var radius = drawWidth
-        
-                
-        
-                var offsetX = rand(-radius, radius);
-                var offsetY = rand(-radius, radius);
-                
-                var randomX = x0 + offsetX;
-                var randomY = y0 + offsetY;
-
-                randomX = x0 + radius * 2 * Math.random() - radius;
-                randomY = y0 + radius * 2 * Math.random() - radius;
-
-                // Circle Form 
-                var angle = Math.random() * Math.PI * 2;
-                randomX = x0 + offsetX * Math.sin(angle);
-                randomY = y0 + offsetX * Math.cos(angle);
-
-                //Ellipsis Form
-                if(width == 40) {
-                    var firstAngle = irisSize
-                    var secondAngle = irisSizeY
-                    r = firstAngle * Math.sqrt(Math.random(0,.1))
-                    fi = 2 * Math.PI * Math.random(0,.1)
-                    randomX = x0 + r * Math.cos(fi)
-                    randomY = y0 + secondAngle / firstAngle *  r * Math.sin(fi)
-                }
-                
-                template.beginFill(color, alpha);
-                template.drawCircle(randomX, randomY, size);
-                template.endFill();
-
-            }
-
-          }
-
-          
-          eyeContainer.addChild(template);
-
-
-
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         
@@ -445,81 +435,145 @@
         highlightColor = chroma(highlightColor).hex()
 
 
-        eyeY = rand(155, 175)
-        eyeX = rand(190, 210)
+        eyeY = rand(190, 220)
+        eyeX = rand(170, 200)
 
-        irisSize = 40
-        irisSizeY = rand(35, 45)
+
+
+        /* IRIS */
+        irisSize = 45
+        irisSizeY = rand(40, 50)
 
         var eyeContainer = new PIXI.Container();
 
         var irisContainer = new PIXI.Container();
-        let irisPencil = new pencil({startWidth: 40, endWidth: 90, iterations: irisSize*50, nib: 'oval', nibOption: irisSizeY, color: hairColor, alpha: 0.1})
+        let irisPencil = new pencil({startWidth: irisSize, endWidth: 90, iterations: irisSize*50, nib: 'oval', nibOption: irisSizeY, color: hairColor, alpha: 0.1})
         let irisLine = new line({x:eyeX, y:eyeY, cp1:0, cp2:-10, endX:0, endY:5, cp3:0, cp4:0})
         drawLine(irisLine, irisPencil, irisContainer)
+
+        let irisPencilTwo = new pencil({startWidth: irisSize, endWidth: 90, iterations: 400, nib: 'oval', nibOption: irisSizeY, color: hairColor, alpha: 0.1})
+        let irisLineTwo = new line({x:20, y:0, cp1:0, cp2:0, endX:-70, endY:300, cp3:50, cp4:0})
+        //drawLine(irisLineTwo, irisPencilTwo, irisContainer)
         //set the anchor point to the center of the sprite
         //irisContainer.pivot.set(0.5, 0.5);
         //irisContainer.angle = rand(-10, 10)
         eyeContainer.addChild(irisContainer);
 
 
+
+        /* PUPIL */
         pupilX = eyeX + rand(-5, 5)
         pupilY = eyeY + rand(0, 10)
 
         pupilSize = rand(4, 7)
 
+        pupilShineOffsetX = rand(-20, 20)
+        pupilShineOffsetY = rand(-20, 20)
+        pupilShineEnd = rand(0, 10)
+        eyeShineTrue = rand(0, 1)
+        eyeShineTwoTrue = rand(0, 1)
+
+        pupilShineMoveTrue = rand(0, 1)
+        pupilShineMoveTwoTrue = rand(0, 1)
+        
+        pupilShineMoveX = 0
+        if(pupilShineMoveTrue == 1) {
+          if(pupilShineMoveTwoTrue == 1) {
+            pupilShineMoveX = rand(0, 30)
+            var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+            pupilShineMoveX = pupilShineMoveX * plusOrMinus
+          }
+        }
+
+        let pupilShinePencil = new pencil({startWidth: pupilSize*4, endWidth: 2, iterations: 50, nib: 'circle', color: '#FFFFFF', alpha: 1})
+        let pupilShineLine = new line({x:pupilX-pupilShineOffsetX, y:pupilY-pupilShineOffsetY, cp1:0, cp2:-5, endX:pupilShineMoveX, endY:1, cp3:0, cp4:0})
+        drawLine(pupilShineLine, pupilShinePencil, eyeContainer)
+
         let pupilPencil = new pencil({startWidth: pupilSize, endWidth: 2, iterations: pupilSize*50, nib: 'circle', color: multiplyColor, alpha: 0.1})
         let pupilLine = new line({x:pupilX, y:pupilY, cp1:0, cp2:-5, endX:0, endY:1, cp3:0, cp4:0})
         drawLine(pupilLine, pupilPencil, eyeContainer)
 
-        
-        app.stage.addChild(eyeContainer);
 
         
-        /*
-
-
-
-        //Pupil
-        pupilX = eyeX + rand(-5, 5)
-        pupilY = eyeY + rand(0, 10)
-
-        pupilSize = rand(4, 10)
-        pupilShineOffsetX = rand(-20, 20)
-        pupilShineOffsetY = rand(-20, 20)
-        pupilShineEnd = rand(0, 10)
-
-        eyeShineTrue = rand(0, 1)
-        eyeShineTwoTrue = rand(0, 1)
-        if(eyeShineTrue > 0.5) {
-            pencilTo(pupilSize*2, 2, pupilSize*10, '#FFFFFF', pupilX-pupilShineOffsetX, pupilY-pupilShineOffsetY, pupilShineEnd, 0, 0, -10, 0, 10, 0, 1)
-        }
-        if(eyeShineTwoTrue > 0.8) {
-            pencilTo(pupilSize*4, 2, pupilSize*20, '#FFFFFF', pupilX+pupilShineOffsetX, pupilY+pupilShineOffsetY, pupilShineEnd, 0, 0, -10, 0, 10, 0, 1)
-        }
-        pencilTo(pupilSize, 2, pupilSize*40, multiplyColor, pupilX, pupilY, 0, 0, 0, -10, 0, 10, 0, 1)
-
-
+        /* IRIS BORDER */
         eyeBorderThickness = rand(1, 3)
         eyeBorderIterations = eyeBorderThickness * rand(5, 10)
 
-        //Top to Right
-        pencilTo(eyeBorderThickness, eyeBorderThickness/2, eyeBorderIterations, highlightColor, eyeX, eyeY - irisSizeY, irisSize, irisSizeY, 0, 0, irisSize, 0, 0.2, 1)
-        pencilTo(eyeBorderThickness/2, eyeBorderThickness/4, eyeBorderIterations, highlightColor, eyeX + irisSize, eyeY, -irisSize, irisSizeY, 0, 0, 0, irisSizeY, 0.2, 1)
-        pencilTo(eyeBorderThickness/4, eyeBorderThickness/2, eyeBorderIterations, highlightColor, eyeX, eyeY + irisSizeY, -irisSize, -irisSizeY, 0, 0, -irisSize, 0, 0.2, 1)
-        pencilTo(eyeBorderThickness/2, eyeBorderThickness, eyeBorderIterations, highlightColor, eyeX - irisSize, eyeY, irisSize, -irisSizeY, 0, 0, 0, -irisSizeY, 0.2, 1)
+        let eyeBorderPencil = new pencil({startWidth: 3, endWidth: 1.5, iterations: 30, nib: 'circle', color: highlightColor, alpha: 0.1})
+        let eyeBorderLine = new line({x:eyeX, y:eyeY - irisSizeY - 2, cp1:0, cp2:0, endX:irisSize, endY:irisSizeY + 2, cp3:irisSize, cp4:0})
+        drawLine(eyeBorderLine, eyeBorderPencil, eyeContainer)
+
+        let eyeBorderPencilTwo = new pencil({startWidth: 3, endWidth: 0.1, iterations: 30, nib: 'circle', color: highlightColor, alpha: 0.1, alphaEasing: 'linear', reverse: true})
+        let eyeBorderLineTwo = new line({x:eyeX + irisSize, y:eyeY, cp1:0, cp2:0, endX:-irisSize, endY:irisSizeY, cp3:0, cp4:irisSize})
+        drawLine(eyeBorderLineTwo, eyeBorderPencilTwo, eyeContainer)
+
+        let eyeBorderPencilThree = new pencil({startWidth: 0.1, endWidth: 3, iterations: 30, nib: 'circle', color: highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        let eyeBorderLineThree = new line({x:eyeX, y:eyeY + irisSizeY, cp1:0, cp2:0, endX:-irisSize, endY:-irisSizeY, cp3:-irisSize, cp4:0})
+        drawLine(eyeBorderLineThree, eyeBorderPencilThree, eyeContainer)
+
+        let eyeBorderPencilFour = new pencil({startWidth: 1.5, endWidth: 3, iterations: 30, nib: 'circle', color: highlightColor, alpha: 0.1})
+        let eyeBorderLineFour = new line({x:eyeX - irisSize, y:eyeY, cp1:0, cp2:0, endX:irisSize, endY:-irisSizeY - 2, cp3:0, cp4:-irisSizeY})
+        drawLine(eyeBorderLineFour, eyeBorderPencilFour, eyeContainer)
+
+        
 
 
 
+
+        /* EYEBROW */
+        let eyeBrowThickness = rand(1, 3)
+        let eyeBrowLength = rand(90, 140)
+        let eyeBrowPencil = new pencil({startWidth: eyeBrowThickness, endWidth: 0.1, iterations: 1, nib: 'circle', color: highlightColor, alpha: 0.1, alphaEasing: 'linear', reverse: true})
+        
+        let eyeBrowYStart = eyeY - irisSizeY*4 + rand(0, 50)
+        let eyeBrowYEnd = eyeBrowYStart + eyeBrowLength
+        let eyeBrowAngle = rand(30, 50)
+
+        let eyeBrowLine = new line({x:eyeX + 40, y:eyeBrowYStart, cp1:0, cp2:0, endX:-eyeBrowLength, endY:eyeBrowAngle, cp3:-eyeBrowLength, cp4:0})
+        drawLine(eyeBrowLine, eyeBrowPencil, eyeContainer)
+
+
+        /* HAIR */
+        
+        let hairThickness = 3
+        let hairLength = rand(90, 140)
+        let hairPencil = new pencil({startWidth: hairThickness, endWidth: hairThickness, iterations: 20, nib: 'circle', color: multiplyColor, alpha: 0.1})
+        
+        let hairYStart = eyeY - irisSizeY*4 + rand(0, 50)
+        let hairYEnd = eyeBrowYStart + eyeBrowLength
+        let hairAngle = rand(30, 50)
+
+        let hairLine = new line({x:100, y:-10, cp1:0, cp2:150, endX:-105, endY:300, cp3:-50, cp4:400})
+        
 
         var eyeMaskContainer = new PIXI.Container()
+        var shape = new PIXI.Graphics();
+        shape.beginFill(0x000000);
+        shape.moveTo(100, -10);
+        shape.bezierCurveTo(100, 140, 50, 390, -5, 290);
+        shape.lineTo(0,0)
+        shape.lineTo(100, -10)
+        shape.endFill();
+        eyeMaskContainer.addChild(shape);
+
+        let hairContainer = new PIXI.Container()
+        let hairFillPencil = new pencil({startWidth: 100, endWidth: 70, iterations: 150, nib: 'oval', nibOption: irisSizeY, color: multiplyColor, alpha: 0.1})
+        let hairFillLine = new line({x:50, y:0, cp1:0, cp2:0, endX:5, endY:300, cp3:0, cp4:0})
+        //drawLine(hairFillLine, hairFillPencil, hairContainer)
+
+        //hairContainer.addChild(new PIXI.Graphics().beginFill(0xFF0000).drawRect(0, 0, 500, 500));
+        hairContainer.mask = eyeMaskContainer
+        eyeContainer.addChild(hairContainer)
+
+        //drawLine(hairLine, hairPencil, eyeContainer)
 
 
-        tearDuctX = eyeX + 70
+        /* EYE SHAPE */
+        tearDuctX = eyeX + 90
         tearDuctY = eyeY + 30
         
-        tearDuctDrawEndX = -130
-        tearDuctDrawEndY = -50
+        tearDuctDrawEndX = rand(-140, -170)
+        tearDuctDrawEndY = rand(-70, -50)
         
         tearDuctDrawEndX2 = tearDuctX + tearDuctDrawEndX
         tearDuctDrawEndY2 = tearDuctY + tearDuctDrawEndY
@@ -527,644 +581,167 @@
         bezierX = -30
         bezierY = -100
 
-        var shape = new PIXI.Graphics();
-        shape.beginFill(0xaabbaa);
-        shape.moveTo(tearDuctX, tearDuctY);
-        shape.bezierCurveTo(tearDuctX, tearDuctY, tearDuctX + bezierX, tearDuctY + bezierY, tearDuctDrawEndX2, tearDuctDrawEndY2);
-        eyeMaskContainer.addChild(shape);
-
-
-        pencilTo(0, 15, 200, highlightColor, tearDuctX, tearDuctY, tearDuctDrawEndX - 10, tearDuctDrawEndY + 7, 0, 0, bezierX, bezierY, 0, 1)
-        pencilTo(0, 10, 10, highlightColor, tearDuctX, tearDuctY, tearDuctDrawEndX, tearDuctDrawEndY, 0, 0, bezierX, bezierY, 0, 1)
-
-
-        tearDuctDrawEndX2 = tearDuctX + tearDuctDrawEndX
-        tearDuctDrawEndY2 = tearDuctY + tearDuctDrawEndY
-
-        bezierX = -120
-        bezierY = 50
-        
-        var shape = new PIXI.Graphics();
-        shape.beginFill(0xaabbaa);
-        shape.moveTo(tearDuctX, tearDuctY);
-        shape.bezierCurveTo(tearDuctX, tearDuctY, tearDuctX + bezierX, tearDuctY + bezierY, tearDuctDrawEndX2, tearDuctDrawEndY2);
-
-
-        eyeMaskContainer.addChild(shape);
-
-        pencilTo(0, 5, 5, highlightColor, tearDuctX, tearDuctY, tearDuctDrawEndX, tearDuctDrawEndY, 0, 0, bezierX, bezierY, 0, 1)
-
-
-        
-        
-        //app.stage.addChild(square);
-
-        eyeContainer.mask = eyeMaskContainer;
-
-        app.stage.addChild(eyeContainer)
-
-        //pencilTo(5, 20, 5, '#000000', 0, 0, 300, 300, 0, 0, 0, 0, 0, 1)
-        
-
-        
-
+        let tearDuctPencil = new pencil({startWidth: 0.1, endWidth: 1, iterations: 30, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        let tearDuctLine = new line({x:tearDuctX, y:tearDuctY, cp1:-15, cp2:-25, endX:tearDuctDrawEndX, endY:tearDuctDrawEndY, cp3:bezierX, cp4:bezierY})
+        drawLine(tearDuctLine, tearDuctPencil, eyeContainer)
         
 
 
-        var drawLeftHair = function() {
-            var template = new PIXI.Graphics();
-            if (counter == 1) {
-                template.beginFill(hairColor2);
-            } else {
-                template.beginFill(hairColor1);
-            }
-            counter++
-
-
-
-
-            template.drawCircle(0, 0, 15);
-            template.endFill();
-            var texture = app.renderer.generateTexture(template);
-            var circle = new PIXI.Sprite(texture);
-
-
-
-            var randEndX = rand(-200, 150)
-            var randEndXP = rand(-200, 250)
-
-            var randEndYP = rand(-50, 50)
-            var randEndX1 = rand(-100, 100)
-
-            var randEndXX = rand(0, 100)
-
-            var width = 70
-            var endWidth = 70
-
-            var bezier = [{
-                x: randEndX1,
-                y: -100
-            }, {
-                x: 0,
-                y: randEndYP
-            }, {
-                x: randEndXP,
-                y: 350
-            }, {
-                x: randEndX,
-                y: 450
-            }]
-
-            var bezierPoints = findCBezPoints(bezier);
-
-            var points = [null, null, null];
-
-            var widthFactor = (width - endWidth) / bezierPoints.length
-
-            var iterations = 3
-
-            for (var j = 0; j < iterations; j++) {
-
-                for (var i = 0; i < bezierPoints.length; i++) {
-
-                    var drawWidth = width - (widthFactor * i)
-
-                    var x = bezierPoints[i].x;
-                    var y = bezierPoints[i].y;
-
-                    points[0] = points[1];
-                    points[1] = points[2];
-                    points[2] = {
-                        X: x,
-                        Y: y
-                    };
-
-                    if (points[0] == null)
-                        continue;
-
-                    var p0 = points[0];
-                    var p1 = points[1];
-                    var p2 = points[2];
-
-                    var x0 = (p0.X + p1.X) / 2;
-                    var y0 = (p0.Y + p1.Y) / 2;
-
-                    var alpha = perlin.get(x0, y0)
-
-                    alpha = Math.abs(alpha)
-
-                    if (alpha < 0.1) {
-                        alpha = 0.1
-                    }
-
-                    alpha = 1 - alpha
-
-
-
-                    var radius = drawWidth
-
-                    if (width == 1) {
-                        radius = radius / 20
-                    }
-
-                    var offsetX = rand(-radius, radius);
-                    var offsetY = rand(-radius, radius);
-
-                
-
-
-                    let circleRadius = radius * Math.sqrt(Math.random())
-                    let theta = Math.random() * 2 * Math.PI
-
-                    x0 = x0 + radius * Math.cos(theta)
-                    y0 = y0 + radius * Math.sin(theta)
-
-
-                    if (i > 1) {
-                        let duplicate = new PIXI.Sprite(circle.texture);
-                        duplicate.x = x0
-                        duplicate.y = y0
-                        duplicate.alpha = alpha
-                        container.addChild(duplicate)
-
-                    }
-
-
-                }
-
-            }
-
-            var containerTwo = new PIXI.ParticleContainer(500000);
-            app.stage.addChild(containerTwo)
-
-
-            var template = new PIXI.Graphics();
-
-            if (counter2 == 1) {
-                template.beginFill(hairColor3);
-            } else {
-                template.beginFill(hairColor4);
-            }
-            counter2++
-
-
-
-            template.drawCircle(0, 0, 0.5);
-            template.endFill();
-            var texture = app.renderer.generateTexture(template);
-            var circle = new PIXI.Sprite(texture);
-
-            app.stage.addChild(template);
-
-
-
-
-            var width = 100
-            var endWidth = 100
-
-            var bezier = [{
-                x: randEndX1,
-                y: -100
-            }, {
-                x: 0,
-                y: 50
-            }, {
-                x: randEndXP,
-                y: 350
-            }, {
-                x: randEndX - 30,
-                y: 450
-            }]
-
-            var bezierPoints = findCBezPoints(bezier);
-
-            var points = [null, null, null];
-
-            var widthFactor = (width - endWidth) / bezierPoints.length
-
-            var iterations = 20
-
-            for (var j = 0; j < iterations; j++) {
-
-                for (var i = 0; i < bezierPoints.length; i++) {
-
-                    var drawWidth = width - (widthFactor * i)
-
-                    var x = bezierPoints[i].x;
-                    var y = bezierPoints[i].y;
-
-                    points[0] = points[1];
-                    points[1] = points[2];
-                    points[2] = {
-                        X: x,
-                        Y: y
-                    };
-
-                    if (points[0] == null)
-                        continue;
-
-                    var p0 = points[0];
-                    var p1 = points[1];
-                    var p2 = points[2];
-
-                    var x0 = (p0.X + p1.X) / 2;
-                    var y0 = (p0.Y + p1.Y) / 2;
-
-                    var alpha = perlin.get(x0, y0)
-
-                    if (alpha < 0.1) {
-                        alpha = 0.1
-                    }
-
-                    alpha = 1
-
-
-                    var radius = drawWidth
-
-                    if (width == 1) {
-                        radius = radius / 20
-                    }
-
-                    var offsetX = rand(-radius, radius);
-                    var offsetY = rand(-radius, radius);
-
-                    if (j > iterations * 0.70) {
-                        offsetY = -drawWidth
-                    }
-                    if (j > iterations * 0.85) {
-                        offsetY = drawWidth
-                    }
-
-
-
-                    let circleRadius = radius * Math.sqrt(Math.random())
-                    let theta = Math.random() * 2 * Math.PI
-
-                    x0 = x0 + radius * Math.cos(theta)
-                    y0 = y0 + radius * Math.sin(theta)
-
-
-                    if (i > 1) {
-                        let duplicate = new PIXI.Sprite(circle.texture);
-                        duplicate.x = x0
-                        duplicate.y = y0
-                        duplicate.alpha = alpha
-                        containerTwo.addChild(duplicate)
-
-                    }
-
-
-                }
-
-            }
-
-
-
-            var template = new PIXI.Graphics();
-            template.beginFill(hairColor5);
-            template.drawCircle(0, 0, 0.5);
-            template.endFill();
-            var texture = app.renderer.generateTexture(template);
-            var circle = new PIXI.Sprite(texture);
-
-            app.stage.addChild(template);
-
-
-
-
-            var width = rand(1, 3)
-            var endWidth = width + 2;
-
-            var bezier = [{
-                x: randEndX1 + 110,
-                y: -100
-            }, {
-                x: 100,
-                y: 50
-            }, {
-                x: randEndXP + 90,
-                y: 350
-            }, {
-                x: randEndX + 110,
-                y: 450
-            }]
-
-            var bezierPoints = findCBezPoints(bezier);
-
-            var points = [null, null, null];
-
-            var widthFactor = (width - endWidth) / bezierPoints.length
-
-            var iterations = 0 //rand(10, 20)
-
-            for (var j = 0; j < iterations; j++) {
-
-                for (var i = 0; i < bezierPoints.length; i++) {
-
-                    var drawWidth = width - (widthFactor * i)
-
-                    var x = bezierPoints[i].x;
-                    var y = bezierPoints[i].y;
-
-                    points[0] = points[1];
-                    points[1] = points[2];
-                    points[2] = {
-                        X: x,
-                        Y: y
-                    };
-
-                    if (points[0] == null)
-                        continue;
-
-                    var p0 = points[0];
-                    var p1 = points[1];
-                    var p2 = points[2];
-
-                    var x0 = (p0.X + p1.X) / 2;
-                    var y0 = (p0.Y + p1.Y) / 2;
-
-                    var alpha = perlin.get(x0, y0)
-
-                    if (alpha < 0.1) {
-                        alpha = 0.1
-                    }
-
-                    //alpha = 1
-
-
-                    var radius = drawWidth
-
-                    if (width == 1) {
-                        radius = radius / 20
-                    }
-
-                    var offsetX = rand(-radius, radius);
-                    var offsetY = rand(-radius, radius);
-
-                    if (j > iterations * 0.70) {
-                        offsetY = -drawWidth
-                    }
-                    if (j > iterations * 0.85) {
-                        offsetY = drawWidth
-                    }
-
-
-
-                    let circleRadius = radius * Math.sqrt(Math.random())
-                    let theta = Math.random() * 2 * Math.PI
-
-                    x0 = x0 + radius * Math.cos(theta)
-                    y0 = y0 + radius * Math.sin(theta)
-
-
-                    if (i > 1) {
-                        let duplicate = new PIXI.Sprite(circle.texture);
-                        duplicate.x = x0
-                        duplicate.y = y0
-                        duplicate.alpha = alpha
-                        containerTwo.addChild(duplicate)
-
-                    }
-
-
-                }
-
-            }
-
-            var template = new PIXI.Graphics();
-            template.beginFill(hairColor5);
-            template.drawCircle(0, 0, 0.5);
-            template.endFill();
-            var texture = app.renderer.generateTexture(template);
-            var circle = new PIXI.Sprite(texture);
-
-            app.stage.addChild(template);
-
-
-
-
-            var width = 2
-            var endWidth = 1;
-
-            var bezier = [{
-                x: randEndX1 + 110,
-                y: -100
-            }, {
-                x: 100,
-                y: 50
-            }, {
-                x: randEndXP + 90,
-                y: 350
-            }, {
-                x: randEndX + 130,
-                y: 450
-            }]
-
-            var bezierPoints = findCBezPoints(bezier);
-
-            var points = [null, null, null];
-
-            var widthFactor = (width - endWidth) / bezierPoints.length
-
-            var iterations = 5 //0//rand(10, 20)
-
-            for (var j = 0; j < iterations; j++) {
-
-                for (var i = 0; i < bezierPoints.length; i++) {
-
-                    var drawWidth = width - (widthFactor * i)
-
-                    var x = bezierPoints[i].x;
-                    var y = bezierPoints[i].y;
-
-                    points[0] = points[1];
-                    points[1] = points[2];
-                    points[2] = {
-                        X: x,
-                        Y: y
-                    };
-
-                    if (points[0] == null)
-                        continue;
-
-                    var p0 = points[0];
-                    var p1 = points[1];
-                    var p2 = points[2];
-
-                    var x0 = (p0.X + p1.X) / 2;
-                    var y0 = (p0.Y + p1.Y) / 2;
-
-                    var alpha = perlin.get(x0, y0)
-
-                    if (alpha < 0.1) {
-                        alpha = 0.1
-                    }
-
-                    alpha = 1
-
-
-                    var radius = drawWidth
-
-                    if (width == 1) {
-                        radius = radius / 20
-                    }
-
-                    var offsetX = rand(-radius, radius);
-                    var offsetY = rand(-radius, radius);
-
-                    if (j > iterations * 0.70) {
-                        offsetY = -drawWidth
-                    }
-                    if (j > iterations * 0.85) {
-                        offsetY = drawWidth
-                    }
-
-
-
-                    let circleRadius = radius * Math.sqrt(Math.random())
-                    let theta = Math.random() * 2 * Math.PI
-
-                    x0 = x0 + radius * Math.cos(theta)
-                    y0 = y0 + radius * Math.sin(theta)
-
-
-                    if (i > 1) {
-                        let duplicate = new PIXI.Sprite(circle.texture);
-                        duplicate.x = x0
-                        duplicate.y = y0
-                        duplicate.alpha = alpha
-                        containerTwo.addChild(duplicate)
-
-                    }
-
-
-                }
-
-            }
-
-
-
+        let tearDuctPencilThree = new pencil({startWidth: 0.1, endWidth: 2, iterations: 30, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        let tearDuctPencilNew = new pencil({startWidth: 0.1, endWidth: 2, iterations: 30, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        let tearDuctLineThree = new line({x:tearDuctX, y:tearDuctY - 10, cp1:-15, cp2:-35, endX:tearDuctDrawEndX, endY:tearDuctDrawEndY, cp3:-50, cp4:-100})
+
+        
+        var reverseTheLine = function(line) {
+            copyLine = structuredClone(line)
+            copyLine.x = line.x + line.endX
+            copyLine.y = line.y + line.endY
+            copyLine.endX = line.endX * -1
+            copyLine.endY = line.endY * -1
+            copyLine.cp1 = (line.endX - line.cp3) * -1
+            copyLine.cp2 = (line.endY - line.cp4) * -1
+            copyLine.cp3 = (line.endX - line.cp1) * -1
+            copyLine.cp4 = (line.endY - line.cp2) * -1
+            return copyLine
         }
+       
 
-        //drawLeftHair();
+        var newLine = reverseTheLine(tearDuctLineThree)
+        //drawLine(newLine, tearDuctPencilNew, eyeContainer)
+        drawLine(newLine, tearDuctPencilNew, eyeContainer)
+        drawLine(tearDuctLineThree, tearDuctPencilThree, eyeContainer)
 
-        //drawLeftHair();
+       
 
+        
+        var midPoint = getPositionOnLine(tearDuctLine, 0.96)
+        var eyeLashPencil = new pencil({startWidth: 5, endWidth: 0.1, iterations: 300, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear', reverse: true})
+        var eyeLashLine = new line({x:midPoint.x, y:midPoint.y - 3, cp1:0, cp2:0, endX:-20, endY:-20, cp3:-10, cp4:0})
+        drawLine(eyeLashLine, eyeLashPencil, eyeContainer)
 
-        var containerThree = new PIXI.ParticleContainer(500000);
-        app.stage.addChild(containerThree)
+        var midPoint = getPositionOnLine(tearDuctLine, 0.2)
+        var eyeLashPencil = new pencil({startWidth: 0.1, endWidth: 4, iterations: 90, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        var eyeLashLine = new line({x:midPoint.x, y:midPoint.y, cp1:0, cp2:0, endX:tearDuctDrawEndX + 18, endY:tearDuctDrawEndY + 30, cp3:bezierX*0.5, cp4:bezierY*0.55})
+        drawLine(eyeLashLine, eyeLashPencil, eyeContainer)
 
-        var drawLeftHairTwo = function() {
+        var midPoint = getPositionOnLine(tearDuctLine, 0.4)
+        var eyeLashPencil = new pencil({startWidth: 2, endWidth: 10, iterations:300, nib: 'oval', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        var eyeLashLine = new line({x:midPoint.x, y:midPoint.y, cp1:0, cp2:0, endX:tearDuctDrawEndX + 45, endY:tearDuctDrawEndY + 50, cp3:bezierX*0.2, cp4:bezierY*0.2})
+        drawLine(eyeLashLine, eyeLashPencil, eyeContainer)
 
+        var midPoint = getPositionOnLine(tearDuctLine, 0.99)
+        var eyeLashFlick = rand(-5, -30)
+        var eyeLashPencil = new pencil({startWidth: 3, endWidth: 0.1, iterations: 200, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear', reverse: true})
+        var eyeLashLine = new line({x:midPoint.x, y:midPoint.y - 3, cp1:0, cp2:0, endX:-25, endY:-25, cp3:eyeLashFlick, cp4:0})
+        drawLine(eyeLashLine, eyeLashPencil, eyeContainer)
 
-            //flick
-            var template = new PIXI.Graphics();
-            template.beginFill(hairColor2);
-            template.drawCircle(0, 0, 0.5);
-            template.endFill();
-            var texture = app.renderer.generateTexture(template);
-            var circle = new PIXI.Sprite(texture);
+        var midPoint = getPositionOnLine(tearDuctLine, 0.85)
+        var eyeLashFlick = rand(-5, -30)
+        var eyeLashPencil = new pencil({startWidth: 3, endWidth: 0.1, iterations: 200, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear', reverse: true})
+        var eyeLashLine = new line({x:midPoint.x, y:midPoint.y - 3, cp1:0, cp2:0, endX:-25, endY:-25, cp3:eyeLashFlick, cp4:0})
+        drawLine(eyeLashLine, eyeLashPencil, eyeContainer)
 
-            var width = 3
-            var endWidth = 0
+        let tearDuctPencilTwo = new pencil({startWidth: 0.1, endWidth: 1, iterations: 5, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        let tearDuctLineTwo = new line({x:tearDuctX - 2, y:tearDuctY + 2, cp1:-50, cp2:20, endX:tearDuctDrawEndX, endY:tearDuctDrawEndY, cp3:-150, cp4:30})
+        drawLine(tearDuctLineTwo, tearDuctPencilTwo, eyeContainer)
 
-            startX = rand(200, 300)
-            OffX = rand(200, 300)
+        let tearDuctPencilThreeFour = new pencil({startWidth: 0.1, endWidth: 4, iterations: 70, nib: 'circle', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
 
-            randEndX = rand(250, 450)
-            randEndY = rand(180, 350);
+        lineSection = calculateBezierSection(tearDuctLineTwo, 0.5, 1)
+        lineSection = new line(lineSection)
+        //console.log(lineSection)
+        drawLine(lineSection, tearDuctPencilThreeFour, eyeContainer)
 
-            randPointX = rand(150, 450)
+        let nosePencil = new pencil({startWidth: 3, endWidth: 5, iterations: 2, nib: 'oval', color:highlightColor, alpha: 0.1, alphaEasing: 'linear'})
+        let noseLine = new line({x:400-50, y:400-20, cp1:0, cp2:0, endX:50, endY:-20, cp3:0, cp4:0})
+        drawLine(noseLine, nosePencil, eyeContainer)
 
-            var bezier = [{
-                x: startX,
-                y: -100
-            }, {
-                x: OffX,
-                y: -100
-            }, {
-                x: randPointX,
-                y: 150
-            }, {
-                x: randEndX,
-                y: randEndY
-            }]
-
-            var bezierPoints = findCBezPoints(bezier);
-
-            var points = [null, null, null];
-
-            var widthFactor = (width - endWidth) / bezierPoints.length
-
-            var iterations = 20 //rand(10, 20)
-
-            for (var j = 0; j < iterations; j++) {
-
-                for (var i = 0; i < bezierPoints.length; i++) {
-
-                    var drawWidth = width - (widthFactor * i)
-
-                    var x = bezierPoints[i].x;
-                    var y = bezierPoints[i].y;
-
-                    points[0] = points[1];
-                    points[1] = points[2];
-                    points[2] = {
-                        X: x,
-                        Y: y
-                    };
-
-                    if (points[0] == null)
-                        continue;
-
-                    var p0 = points[0];
-                    var p1 = points[1];
-                    var p2 = points[2];
-
-                    var x0 = (p0.X + p1.X) / 2;
-                    var y0 = (p0.Y + p1.Y) / 2;
-
-                    var alpha = perlin.get(x0, y0)
-
-                    var radius = drawWidth
-
-                    if (width == 1) {
-                        radius = radius / 20
-                    }
-
-                    var offsetX = rand(-radius, radius);
-                    var offsetY = rand(-radius, radius);
+        //RGBFilter = new PIXI.filters.RGBSplitFilter([0,0],[0,0],[0,0])
+        //eyeContainer.filters = [RGBFilter]
 
 
 
-                    let circleRadius = radius * Math.sqrt(Math.random())
-                    let theta = Math.random() * 2 * Math.PI
-
-                    x0 = x0 + radius * Math.cos(theta)
-                    y0 = y0 + radius * Math.sin(theta)
 
 
-                    if (i > 1) {
-                        let duplicate = new PIXI.Sprite(circle.texture);
-                        duplicate.x = x0
-                        duplicate.y = y0
-                        duplicate.alpha = alpha
-                        containerThree.addChild(duplicate)
-
-                    }
 
 
-                }
 
-            }
 
+
+
+
+
+
+
+        ///////// FILL STYLE & TEXTURE ////////////
+        let fillContainer = new PIXI.Container()
+        hairColor = '#3b80f6'
+        textureBackground = new PIXI.Graphics()
+        hairColorPIXI = PIXI.utils.string2hex(hairColor)
+        textureBackground.beginFill(hairColorPIXI, 1);
+        textureBackground.drawRect(0, 0, 400, 400);
+        textureBackground.endFill();
+        eyeContainer.addChild(textureBackground)
+
+        //use chroma.js to lighten #3d1d14
+        var lighten = chroma.scale([hairColorPIXI, '#ffffff']).mode('lch').colors(10)
+        //get the first color in lighten and convert to hex
+        var lightenHex = chroma(lighten[7]).hex()
+        //remove some saturation from the color
+        var lightenHex = chroma(lightenHex).saturate(-0.5).hex()
+        //convert the color for use with PIXI
+        var lightenPixi = PIXI.utils.string2hex(lightenHex)
+        textureForeground = new PIXI.Graphics()
+        for(var i = 0; i < 100000; i++){
+            randomAlpha = randFloat(0, 0.065)
+            //get a random number between 0 and 0.065
+            textureForeground.beginFill(lightenPixi, randomAlpha)
+            textureForeground.drawCircle(rand(0, 400), rand(0, 400), rand(0.5, 1.1))
+            textureForeground.endFill()
+            //textureForeground.blendMode = PIXI.BLEND_MODES.ADD
         }
+        grain = new PIXI.filters.OldFilmFilter({
+            sepia: 0.0,
+            noise: 0.06,
+            noiseSize: 2,
+            scratch: 0.0,
+            scratchDensity: 0.0,
+            scratchWidth: 0.0,
+            vignetting: 0.0,
+            vignettingAlpha: 0.0,
+            vignettingBlur: 0.0,
+            seed: 0.1,
+        })
+        //textureForeground.filters = [grain]
+        blur = new PIXI.filters.KawaseBlurFilter(0.01)
+        textureForeground.filters = [blur]
+        sharpnessMatrix = new PIXI.filters.ConvolutionFilter(
+            [0, -1, 0,
+             -1, 5, -1,
+             0, -1, 0],
+            400, 400
+        )
+        sharpnessMatrixTwo = new PIXI.filters.ConvolutionFilter(
+            [0, -1, 0,
+             -1, 5, -1,
+             0, -1, 0],
+            1200, 1200
+        )
+        textureForeground.alpha = 0.005
+        var contrast = new PIXI.filters.AdjustmentFilter({ contrast: 1 });
 
-        var addHair = rand(0, 1)
-        if (addHair) {
-            //drawLeftHairTwo();
-            //drawLeftHairTwo();
-        }*/
+        textureForeground.filters = [blur, sharpnessMatrix, grain]
+        textureForeground.blendMode = PIXI.BLEND_MODES.OVERLAY
+        fillContainer.addChild(textureBackground)
+        fillContainer.addChild(textureForeground)
+        //fillContainer.filters = [sharpnessMatrixTwo]
+        
+
+
+        app.stage.addChild(eyeContainer);
+        app.stage.addChild(fillContainer)
+
+        
     </script>
 </body>
 

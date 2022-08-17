@@ -1,10 +1,16 @@
+let getPositionOnLine = function(pencil, line, percent) {
+  bezierPoints = createBezierPoints(pencil, line);
+  pointOnLine = bezierPoints.length * percent;
+  return bezierPoints[Math.floor(pointOnLine)];
+}
+
 var findBezierPoint = function(t, p0, p1, p2, p3) {
   var t2 = t * t;
   var t3 = t2 * t;
   return (p0 * (t3 * 6) + p1 * (t2 * 3) + p2 * 3 + p3) / 6;
 };
 
-let createBezierPoints = function(line) {
+let createBezierPoints = function(pencil, line) {
 
   let cp1Local = line.x + line.cp1
   let cp2Local = line.y + line.cp2
@@ -17,7 +23,7 @@ let createBezierPoints = function(line) {
 
   var bezier = [{x: line.x, y: line.y}, {x: cp1Local, y: cp2Local}, {x: cp3Local, y:cp4Local}, {x:newEndX, y:newEndY}]
 
-  var bezierPoints = findCBezPoints(bezier);
+  var bezierPoints = findCBezPoints(bezier, pencil.density);
 
   return bezierPoints;
 }
@@ -42,10 +48,10 @@ let getBezierPoint = function(points, x, y) {
 
 }
 
-function findCBezPoints(b) {
+function findCBezPoints(b, density=500) {
 	var pts = [b[0]];
 	var lastPt = b[0];
-	var tests = 5000;
+	var tests = density;
 	for (var t = 0; t <= tests; t++) {
 		var pt = getCubicBezierXYatT(b[0], b[1], b[2], b[3], t / tests);
 		var dx = pt.x - lastPt.x;

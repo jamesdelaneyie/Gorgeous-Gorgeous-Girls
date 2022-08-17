@@ -3,5 +3,5 @@ function rand(min, max) {
 }
 
 function randFloat(min, max) { 
-    return (Math.random() * (min - max) + max).toFixed(4)
+    return parseFloat((Math.random() * (min - max) + max).toFixed(4))
 }

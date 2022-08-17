@@ -102,3 +102,53 @@ function bezier (mX1, mY1, mX2, mY2) {
     return calcBezier(getTForX(x), mY1, mY2);
   };
 };
+
+var drawSVG = function(points, width, ipo){
+
+  function addPoints (a, b) {
+      return [ a[0] + b[0], a[1] + b[1] ];
+  }
+  function project (p) {
+      return [  1 * p[0], 100 - p[1] ];
+  }
+
+  var svg = "<svg width='"+width+"'' height='100' style='background:#111'>";
+
+  // curve
+  svg += "<path fill='none' stroke-width='2' stroke='#f00' d='";
+  var i, p, point, prev = points[0];
+  for (i = 1; i < points.length; i++) {
+      point = points[i];
+      svg += " M "+project(prev.p)+" C"+project(addPoints(prev.p, prev.upper||[0,0]))+" "+project(addPoints(point.p, point.lower||[0,0]))+" "+project(point.p);
+      prev = point;
+  }
+  svg += "' />";
+
+  // points and handles
+  for (i = 0; i < points.length; i++) {
+      point = points[i];
+      p = project(point.p);
+      var clr = "#f00";
+      svg += "<circle cx='"+p[0]+"' cy='"+p[1]+"' r='3' fill='"+clr+"' />";
+      [point.lower, point.upper].filter(function (o) { return o; }).map(function (handle) {
+          handle = project(addPoints(handle, point.p));
+          var d = "M "+p+" L"+handle;
+          svg += "<path stroke='"+clr+"' d='"+d+"' />";
+          svg += "<circle cx='"+handle[0]+"' cy='"+handle[1]+"' r='2' fill='"+clr+"' />";
+      });
+  }
+
+  // interpolation sampling
+  for (var x=0; x<width; x += 1) {
+      var y = ipo(x);
+      p = project([ x, y ]);
+      //console.log(p)
+      svg += "<circle cx='"+p[0]+"' cy='"+p[1]+"' r='1' fill='#ffa' />";
+  }
+
+  svg += "</svg>";
+
+  let svgWrapper = document.getElementById("easing-wrapper");
+  svgWrapper.innerHTML = svg;
+
+}

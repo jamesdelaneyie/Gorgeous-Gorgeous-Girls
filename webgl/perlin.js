@@ -40,4 +40,52 @@ let perlin = {
 		return v;
 	},
 };
-perlin.seed(10);
+
+perlin.seed();
+
+
+const mapNumbers = (number, [inMin, inMax], [outMin, outMax]) => {
+    // if you need an integer value use Math.floor or Math.ceil here
+    return (number - inMin) / (inMax - inMin) * (outMax - outMin) + outMin;
+}
+
+/*
+h = 100
+w = 100
+var M = 4294967296,
+// a - 1 should be divisible by m's prime factors
+A = 1664525,
+// c and m should be co-prime
+C = 1;
+var Z = Math.floor(Math.random() * M);
+
+function rand(){
+  Z = (A * Z + C) % M;
+  return Z / M - 0.5;
+};
+
+function interpolate(pa, pb, px){
+  var ft = px * Math.PI,
+    f = (1 - Math.cos(ft)) * 0.5;
+  return pa * (1 - f) + pb * f;
+}
+
+var x = 0,
+  y = 0,
+  amp = 100, //amplitude
+  wl = 100, //wavelength
+  fq = 1 / wl, //frequency
+  a = rand(),
+  b = rand();
+
+while(x < w){
+  if(x % wl === 0){
+    a = b;
+    b = rand();
+    y = h / 2 + a * amp;
+  }else{
+    y = h / 2 + interpolate(a, b, (x % wl) / wl) * amp;
+  }
+  //console.log(y)
+  x += 1;
+}*/

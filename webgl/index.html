@@ -683,7 +683,7 @@
         textureBackground.endFill();
         eyeContainer.addChild(textureBackground)
 
-        //use chroma.js to lighten #3d1d14
+        //use chroma.js to lighten 
         var lighten = chroma.scale([hairColorPIXI, '#ffffff']).mode('lch').colors(10)
         //get the first color in lighten and convert to hex
         var lightenHex = chroma(lighten[7]).hex()
@@ -737,9 +737,12 @@
         //fillContainer.filters = [sharpnessMatrixTwo]
         
 
-
+        //ASCAIFilter = new PIXI.filters.AsciiFilter(2)
+        //eyeContainer.filters = [ASCAIFilter]
+        //dotFilter = new PIXI.filters.DotFilter(1)
+        //eyeContainer.filters = [dotFilter]
         app.stage.addChild(eyeContainer);
-        app.stage.addChild(fillContainer)
+        //app.stage.addChild(fillContainer)
 
         
     </script>

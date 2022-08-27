@@ -108,11 +108,11 @@ function calculateBezierSection(line, t0, t1){
     var p1x = line.x
     var p2x = line.x + line.cp1
     var p3x = line.x + line.cp3
-    var p4x = line.x + line.endX
+    var p4x = line.x + line.x2
     var p1y = line.y
     var p2y = line.y + line.cp2
     var p3y = line.y + line.cp4
-    var p4y = line.y + line.endY
+    var p4y = line.y + line.y2
 
     var values = [p1x,p2x,p3x,p4x,p1y,p2y,p3y,p4y,t0,t1];
     
@@ -148,8 +148,8 @@ function calculateBezierSection(line, t0, t1){
       y:q1y,
       cp1:parseFloat((q1x - q2x).toFixed(2)) * -1,
       cp2:parseFloat((q1y - q2y).toFixed(2)) * -1,
-      endX:parseFloat((q1x - q4x).toFixed(2)) * -1,
-      endY:parseFloat((q1y - q4y).toFixed(2)) * -1,
+      x2:parseFloat((q1x - q4x).toFixed(2)) * -1,
+      y2:parseFloat((q1y - q4y).toFixed(2)) * -1,
       cp3:parseFloat((q1x - q3x).toFixed(2)) * -1,
       cp4:parseFloat((q1y - q3y).toFixed(2)) * -1,
     }

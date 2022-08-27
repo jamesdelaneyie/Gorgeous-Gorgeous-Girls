@@ -331,8 +331,9 @@ artContainer.addChild(eyeContainer)
 let eyeLidMarker = new Marker({
 	color: multiplyColor,
 	material: { size: 1 },
-	nib: { type: "round", size: 1, endSize: 15, maxSize: 10},
+	nib: { type: "oval", size: 1, endSize: 15},
 	alpha: 0.12,
+	fadeEdges: true,
 })
 
 let eyeLidMove = new Move({

@@ -130,9 +130,6 @@ class Mark {
         
         if(move.pressure !== null) {
             if (move.pressure.map !== undefined) {
-                //console.log('here')
-                //reverse the array
-                //bezierPoints.reverse();
                 var ipo;
                 var xPoint1 = 0;
                 var xPoint2 = parseInt((bezierPoints.length / 20) * 1);
@@ -247,15 +244,12 @@ class Mark {
                 var jitterEasing = getEasing('ease-in')
                 var jitter = move.jitter
                 easing = bezier(jitterEasing[0], jitterEasing[1], jitterEasing[2], jitterEasing[3])
-                //jitter = easing(percent) * jitter;
+                jitter = easing(percent) * jitter;
                 
                 if(move.jitter == 0.7) {
                     var value = ipoJitter(j)
                     jitter = mapNumbers(value, [0, 100], [0, 1.5]);
-                    //jitter = value * 50;
-                    //console.log(jitter)
                 }
-                //console.log(move)
                 
 
                 if(move.pressure !== null) {
@@ -341,12 +335,12 @@ class Mark {
                             
                             let degreeValue = angle
     
-                            var firstAngle = marker.nib.size - (widthFactor * j)
+                            var firstAngle = radius//marker.nib.size - (widthFactor * j)
     
                             if(marker.nib.sizeY !== undefined) {
                                 var secondAngle = marker.nib.sizeY - (widthFactor * j)
                             } else {
-                                var secondAngle = marker.nib.size * 1.5;
+                                var secondAngle = radius//marker.nib.size * 1.5;
                             }
     
                             var r = firstAngle * Math.sqrt(Math.random(0, 0.1));
@@ -355,25 +349,32 @@ class Mark {
                             let drawX = drawPoint[0] + r * Math.cos(fi)
                             let drawY = drawPoint[1] + (secondAngle / firstAngle) * r * Math.sin(fi)
 
-                            drawY = drawY + (offsetY * move.jitter)
-                            drawX = drawX + (offsetX * move.jitter)
+                            drawY = drawY// + (offsetY * move.jitter)
+                            drawX = drawX// + (offsetX * move.jitter)
 
-                            if(drawY > drawPoint[1]) {
+                            //console.log(fi)
+
+                            if(drawY > drawPoint[1] + (secondAngle - 5)) {
                                 let desaturateAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]+secondAngle], [0, randFloat(0, 2)]);
                                 let fadeAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]+secondAngle], [alpha, 0]);
-                                let lightenAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]+secondAngle], [0, randFloat(0, 2)]);
+                                let lightenAmount = 0//mapNumbers(drawY, [drawPoint[1], drawPoint[1]+secondAngle], [0, randFloat(0, 2)]);
                                 var greyColor = chroma(color).saturate(desaturateAmount).brighten(lightenAmount).hex();
-
-                                greyColor = PIXI.utils.string2hex(greyColor);
-                                dotGraphic.beginFill(greyColor, fadeAmount);
-                            } else if (drawY < drawPoint[1]) {
-                                let desaturateAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [0, randFloat(0, 2)]);
-                                let darkenAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [0, randFloat(0, 2)]);
-                                let fadeAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [alpha, 0]);
                                 //fadeAmount = alpha
+                                greyColor = PIXI.utils.string2hex(greyColor);
+                                dotGraphic.beginFill(greyColor, alpha);
+                                console.log('fire')
+                            } else if (drawY < drawPoint[1] - (secondAngle - 5)) {
+                                let desaturateAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [0, randFloat(0, 2)]);
+                                let darkenAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [0, 0.5]);
+                                let fadeAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [alpha, 0]);
+                                fadeAmount = alpha
                                 var greyColor = chroma(color).desaturate(desaturateAmount).darken(darkenAmount).hex();
                                 greyColor = PIXI.utils.string2hex(greyColor);
                                 dotGraphic.beginFill(greyColor, fadeAmount);
+                                console.log('fire 2')
+                            } else {
+                                //console.log('fire 3')
+                                dotGraphic.beginFill(color, alpha);
                             }
                            
                             
@@ -462,12 +463,12 @@ let getDrawPosition = function (drawPoint, marker, move, offsetX, offsetY, radiu
 
         let degreeValue = marker.nib.angle
 
-		var firstAngle = marker.nib.size;
+		var firstAngle = radius//marker.nib.size;
 
         if(marker.nib.sizeY !== undefined) {
 		    var secondAngle = marker.nib.sizeY;
         } else {
-            var secondAngle = marker.nib.size * 1.5;
+            var secondAngle = radius//marker.nib.size * 1.5;
         }
 
 		var r = firstAngle * Math.sqrt(Math.random(0, 0.1));

@@ -11,7 +11,7 @@ A `Marker` can be thought of similar to a pencil, pen, crayon, or other drawing 
 
 A `Move` stores information related to how the `Marker` "draws" such as a the path it follows (a `line`), the amount of pressure over the course of the `line`, the amount of "noise" added to the `line`, if there is any "hold" during the movement (time where the marker is kept in place), and other such properties.
 
-A `Mark` is created by a `Marker` making a `Move`. The `Marker` follows a `line`, which is a series of points that create a path, that is created from a quadratic bezier curve (the attributes that make up a `line`).
+A `Mark` is created by a `Marker` making a `Move`. The `Marker` follows a `line`, which is a series of points that create a path, that is created from a cubic bezier curve (the attributes that make up a `line`).
 
 To create a `Mark`, a `Marker` moves step by step through the points of the path that make up the line, and at each step, draws a series of dots on the canvas. Each step along the line will have different properties for drawing those dots for that particular location, such as the color and opacity of the dots, their size, and the possible distance from the current center point that they can be placed. 
 

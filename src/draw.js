@@ -362,7 +362,7 @@ class Mark {
                                 //fadeAmount = alpha
                                 greyColor = PIXI.utils.string2hex(greyColor);
                                 dotGraphic.beginFill(greyColor, alpha);
-                                console.log('fire')
+                                //console.log('fire')
                             } else if (drawY < drawPoint[1] - (secondAngle - 5)) {
                                 let desaturateAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [0, randFloat(0, 2)]);
                                 let darkenAmount = mapNumbers(drawY, [drawPoint[1], drawPoint[1]-secondAngle], [0, 0.5]);
@@ -371,7 +371,7 @@ class Mark {
                                 var greyColor = chroma(color).desaturate(desaturateAmount).darken(darkenAmount).hex();
                                 greyColor = PIXI.utils.string2hex(greyColor);
                                 dotGraphic.beginFill(greyColor, fadeAmount);
-                                console.log('fire 2')
+                                //console.log('fire 2')
                             } else {
                                 //console.log('fire 3')
                                 dotGraphic.beginFill(color, alpha);

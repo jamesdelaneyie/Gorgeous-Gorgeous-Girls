@@ -100,8 +100,8 @@ class Fill {
         
             let theLength = Math.sqrt(Math.pow(theLine.x2, 2) + Math.pow(theLine.y2, 2));
             
-            var offsetX = 0//(theLength/3) * -1
-            var offsetY = 0//(theLength/3) * -1
+            var offsetX = (theLength/3) * -1
+            var offsetY = (theLength/3) * -1
         
             controlPointMod = controlPointMod + rand(offsetX, 0)
             controlPointModTwo = controlPointModTwo + rand(offsetY, 0)

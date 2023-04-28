@@ -1071,14 +1071,153 @@ drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, tr
 
 
 let drawNose = () => {
-	let noseWidth = rand(50, 100)
-	let noseHeight = rand(50, 100)
-	let noseX = center.x - (noseWidth/2)
-	let noseY = center.y + 100
+
+	let noseContainer = new PIXI.Container()
+
+	var noseX = leftEyeX + 120
+	var noseY = 670
+
+	var noseMarker = new Marker({
+		color: hairColor,
+		material: { size: 0.25 },
+		nib: { type: "oval", size: rand(1,4), endSize: rand(2,4), angle: 20, endAngle: 90 },
+		alpha: 0.1,
+		fadeEdges: true,
+	})
+
+	let noseHeight = rand(20, 70)
+	var noseFill = new Fill({
+		color: hairColor,
+		width: rand(30,70),
+		height: noseHeight,
+		angle: -5,
+		gap: 10, 
+		marker: noseMarker,
+		x: noseX + 15, 
+		y: 600 - (noseHeight / 1.5),
+		shape: "circle",
+		layer: noseContainer,
+		moveStyles: {
+			iterations: 1,
+			jitter: 2,
+			noise: {
+				frequency: 0.3,
+				magnitude: 2,
+				smoothing: 1,
+			}
+		}
+	})
+
+	noseFill.fillLines(canvas)
+
+
+
+
+	var noseMarker = new Marker({
+		color: hairColor,
+		material: { size: 1 },
+		nib: { type: "oval", size: 4, endSize: 5, angle: 20, endAngle: 90 },
+		alpha: 0.05,
+		fadeEdges: true,
+	})
+
+
+
+
+	var noseMove = new Move({
+		iterations: 1,
+		jitter: 0.5,
+		pressure: {
+			start: 10,
+			easing: 'ease-in-out',
+			end: 2
+		},
+		noise: {
+			frequency: 0.01,//randFloat(0.01, 0.03),
+			magnitude: 1,//rand(0, 50),
+			smoothing: 0,
+		},
+		line: new line({
+			x: noseX+10, 
+			y: noseY+5,
+			cp1: rand(40, 50),
+			cp2: rand(25, 35),
+			x2: rand(50, 70),
+			y2: 0,
+		})
+	})
+
+	var noseMark = new Mark({
+		name: "nose",
+		marker: noseMarker,
+		move: noseMove,
+		layer: noseContainer
+	})
+	
+	canvas.make(noseMark)
+
+
+	var noseMarker = new Marker({
+		color: multiplyColor,
+		material: { size: 1 },
+		nib: { type: "oval", size: 1, endSize: 3},
+		alpha: 0.12,
+		fadeEdges: true,
+	})
+
+	var noseX = leftEyeX + 120
+	var noseY = 670
+
+	var noseMove = new Move({
+		iterations: 5,
+		jitter: 0.5,
+		pressure: {
+			start: 10,
+			easing: 'ease-in-out',
+			end: 2
+		},
+		noise: {
+			frequency: 0.1,//randFloat(0.01, 0.03),
+			magnitude: 2,//rand(0, 50),
+			smoothing: 20,
+		},
+		line: new line({
+			x: noseX, 
+			y: noseY,
+			cp1: 50,
+			cp2: 50,
+			x2: 80,
+			y2: 0,
+			density: 10,
+			straighten: 1
+		})
+	})
+
+	var noseMark = new Mark({
+		name: "nose",
+		marker: noseMarker,
+		move: noseMove,
+		layer: noseContainer
+	})
+	
+	canvas.make(noseMark)
+	//noseContainer.rotation = 1
+	noseContainer.pivot.x = noseX+40
+	noseContainer.pivot.y = noseY
+	noseContainer.angle = -10
+	noseContainer.x = noseX+40
+	noseContainer.y = noseY
+
+
+
+	artContainer.addChild(noseContainer)
+
+	
 	
 }
 
 drawNose()
+
 
 
 

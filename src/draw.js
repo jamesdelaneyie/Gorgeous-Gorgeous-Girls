@@ -375,7 +375,7 @@ class Mark {
                                 dotGraphic.beginFill(greyColor, fadeAmount);
                                 //console.log('fire 2')
                             } else {
-                                console.log('fire 3')
+                                //console.log('fire 3')
                                 dotGraphic.beginFill(color, alpha);
                             }
                            

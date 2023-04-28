@@ -9,8 +9,6 @@ import {
 	OldFilmFilter,
 	KawaseBlurFilter,
 	ConvolutionFilter,
-	BlurFilter,
-	PixelateFilter,
 } from "pixi-filters";
 
 class Fill {

@@ -99,7 +99,7 @@ function bezier (mX1, mY1, mX2, mY2) {
   };
 };
 
-var drawSVG = function(points, width, ipo){
+var drawSVG = function(points, width, ipo, name){
 
   function addPoints (a, b) {
       return [ a[0] + b[0], a[1] + b[1] ];
@@ -120,7 +120,7 @@ var drawSVG = function(points, width, ipo){
 
   // points and handles
   for (i = 0; i < points.length; i++) {
-     /* point = points[i];
+      point = points[i];
       p = project(point.p);
       var clr = "#f00";
       svg += "<circle cx='"+p[0]+"' cy='"+p[1]+"' r='3' fill='"+clr+"' />";
@@ -129,7 +129,7 @@ var drawSVG = function(points, width, ipo){
           var d = "M "+p+" L"+handle;
           svg += "<path stroke='"+clr+"' d='"+d+"' />";
           svg += "<circle cx='"+handle[0]+"' cy='"+handle[1]+"' r='2' fill='"+clr+"' />";
-      });*/
+      });
   }
 
   // interpolation sampling
@@ -140,6 +140,9 @@ var drawSVG = function(points, width, ipo){
       svg += "<circle cx='"+p[0]+"' cy='"+p[1]+"' r='1' fill='#ffa' />";
   }
 
+  // text
+  svg += "<text x='' y='110' fill='#fff' font-size='12' font-family='sans-serif'>"+name+"</text>";
+
   svg += "</g>";
 
     let svgWrapper = document.getElementById("easing-wrapper");
@@ -148,11 +151,13 @@ var drawSVG = function(points, width, ipo){
     svgElement.style.background = "#111";
     svgElement.style.width = width + "px";
     svgElement.style.height = "100px";
-    svgElement.style.marginRight = "100px";
+    svgElement.style.marginRight = "20px";
     svgElement.style.padding = "20px"
     svgElement.style.overflow = "visible";
     svgElement.innerHTML = svg;
-    svgWrapper.appendChild(svgElement);
+    if(svgWrapper){
+      svgWrapper.appendChild(svgElement);
+    }
 
 }
 

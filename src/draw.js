@@ -84,12 +84,15 @@ class Move {
 class Mark {
 	constructor(options = {}) {
         this.options = options || {};
+        this.name = options.name || "";
 		this.marker = options.marker || new Marker();
 		this.move = options.move || new Move({density: this.marker.density, pressure: {start:this.marker.nib.size, end: this.marker.nib.size, easing: null}});
 		this.layer = options.layer || new Graphics();
 	}
 
-    make(app, marker=this.marker, move=this.move, layer=this.layer) {
+   
+
+    make(app, marker=this.marker, move=this.move, layer=this.layer ) {
         
         if(marker.density) {
             move.line.density = marker.density;
@@ -104,8 +107,6 @@ class Mark {
             }
         }
         
-
-
         let bezierPoints = createBezierPoints(move.line, move.noise);
 
         let lineGraphic = new PIXI.Container();
@@ -142,15 +143,15 @@ class Mark {
                     { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
                     { p: [bezierPoints.length, rand(0,100)] },
                 ];
-                var points = [
+                /*var points = [
                     { p: [xPoint1, 50], lower: [0, 0], upper: [0, 0] },
                     { p: [xPoint2, 150], lower: [0, 0], upper: [0, 0] },
                     { p: [xPoint3, 100], lower: [0, 0], upper: [0, 0] },
                     { p: [xPoint4, 50], lower: [0, 0], upper: [0, 0] },
                     { p: [bezierPoints.length, 0] },
-                ];
+                ];*/
                 var ipo = new IPO(points);
-                drawSVG(points, bezierPoints.length, ipo);
+                drawSVG(points, bezierPoints.length, ipo, this.name + " pressureMap");
             }
 
             
@@ -168,7 +169,7 @@ class Mark {
                     { p: [bezierPoints.length, rand(0,100)] },
                 ];
                 var ipoAlpha = new IPO(points);
-                drawSVG(points, bezierPoints.length, ipoAlpha);
+                drawSVG(points, bezierPoints.length, ipoAlpha, this.name + " alpha");
             }
         }
 
@@ -186,7 +187,7 @@ class Mark {
                 { p: [bezierPoints.length, 0] },
             ];
             var ipoJitter = new IPO(jitterPoints);
-            drawSVG(jitterPoints, bezierPoints.length, ipoJitter);
+            drawSVG(jitterPoints, bezierPoints.length, ipoJitter, this.name + " jitter");
         }
 
         
@@ -215,9 +216,7 @@ class Mark {
 
                 var drawPoint = [bezierPoints[j].x, bezierPoints[j].y]
 
-                if(marker.nib.endSize !== undefined) {
-                    var radius = marker.nib.size - (widthFactor * j)
-                }
+                
 
                 if(move.pressure !== null) {
                     if(marker.nib.endSize !== undefined) {
@@ -231,11 +230,12 @@ class Mark {
                         radius = value;
                     }
                 } else {
-                    var radius = marker.nib.size;
+                    if(marker.nib.endSize !== undefined) {
+                        var radius = marker.nib.size - (widthFactor * j)
+                    } else {
+                        var radius = marker.nib.size
+                    }
                 }
-
-                
-
                 
                 var alpha = marker.alpha;
 
@@ -273,9 +273,7 @@ class Mark {
                 }
 
                 if(marker.nib.endAngle !== undefined) {
-                    //console.log(percent)
                     var angle = mapNumbers(percent*100, [0, 100], [marker.nib.angle, marker.nib.endAngle]);
-                    
                 }
                 
 
@@ -305,7 +303,8 @@ class Mark {
                         var offsetX = randFloat(-radius, radius);
                         var offsetY = randFloat(-radius, radius);
                     }                    
-                
+                    
+                    let widthFactorValue = widthFactor * j
 
                     let drawPosition = getDrawPosition(
                         drawPoint,
@@ -314,13 +313,15 @@ class Mark {
                         offsetX,
                         offsetY,
                         radius,
-                        jitter
+                        jitter,
+                        widthFactorValue
                     );
-                    
 
+                    
                     
 
                     if(marker.useSprites == true) {
+                        console.log(size)
                         let sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
                         sprite.width = size*2;
                         sprite.height = size*2;
@@ -339,6 +340,7 @@ class Mark {
     
                             if(marker.nib.sizeY !== undefined) {
                                 var secondAngle = marker.nib.sizeY - (widthFactor * j)
+                                //console.log('gire')
                             } else {
                                 var secondAngle = radius//marker.nib.size * 1.5;
                             }
@@ -373,7 +375,7 @@ class Mark {
                                 dotGraphic.beginFill(greyColor, fadeAmount);
                                 //console.log('fire 2')
                             } else {
-                                //console.log('fire 3')
+                                console.log('fire 3')
                                 dotGraphic.beginFill(color, alpha);
                             }
                            
@@ -396,6 +398,12 @@ class Mark {
                         //dotGraphic.beginFill(color, alpha);
                        
                        
+
+                        /*
+                         * 
+                         * Draw dot shape to canvas
+                         * 
+                        /*/
                         
                         if(marker.nib.type == 'round') {
                             dotGraphic.drawCircle(
@@ -420,6 +428,12 @@ class Mark {
                         
                         dotGraphic.endFill();
 
+                        /*
+                         * 
+                         * Apply Blending Modes
+                         * 
+                        /*/
+
                         if(marker.blend == 'add') {
                             dotGraphic.blendMode = PIXI.BLEND_MODES.ADD
                         } else if(marker.blend == 'multiply') {
@@ -429,6 +443,12 @@ class Mark {
                         } else {
                             dotGraphic.blendMode = PIXI.BLEND_MODES.NORMAL
                         }
+
+                        /*
+                         * 
+                         * Add single dot to line
+                         * 
+                        /*/
                         
                         lineGraphic.addChild(dotGraphic);
                     }
@@ -447,7 +467,7 @@ class Mark {
 
 
 
-let getDrawPosition = function (drawPoint, marker, move, offsetX, offsetY, radius, jitter) {
+let getDrawPosition = function (drawPoint, marker, move, offsetX, offsetY, radius, jitter, widthFactorValue) {
 	var drawX, drawY;
 	if (marker.nib.type == "round") {
 		let r = radius * Math.sqrt(Math.random());
@@ -463,10 +483,10 @@ let getDrawPosition = function (drawPoint, marker, move, offsetX, offsetY, radiu
 
         let degreeValue = marker.nib.angle
 
-		var firstAngle = radius//marker.nib.size;
+		var firstAngle = radius
 
         if(marker.nib.sizeY !== undefined) {
-		    var secondAngle = marker.nib.sizeY;
+            var secondAngle = marker.nib.sizeY - widthFactorValue
         } else {
             var secondAngle = radius//marker.nib.size * 1.5;
         }

@@ -1,5 +1,5 @@
-node_modules/
+node_modules
 ggg-old
-dist/
-dist-zipped/
+dist
+dist-zipped
 rough-master

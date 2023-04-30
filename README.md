@@ -30,7 +30,7 @@ In addition to being able to vary the properties of the `Mark` as it is made, th
 GGG uses Pixi.js as it's WebGL renderer, and utilizes PIXI.Sprites placed inside a PIXI.ParticleContainer to create the single dots that make up a `Mark`. Pixi.js was chosen due to it's performance. It allows tens of millions of dots to be drawn to the canvas in very little time when compared to other libraries that use WebGL or Canvas to render.
 
 # With special thanks to
-GGG uses modified versions of code taken from these open-source libraries to perform certain functions. Those libraries are: (bezier-easing.js by @greweb)[https://github.com/gre/bezier-easing], (rough.js by @preetster)[https://github.com/rough-stuff/rough], (open-simplex-noise by @lmas)[https://github.com/lmas/opensimplex], and ofcourse (pixi.js by @pixijs)[https://github.com/pixijs]   
+GGG uses modified versions of code taken from these open-source libraries to perform certain functions. Those libraries are: (bezier-easing.js by @greweb)[https://github.com/gre/bezier-easing], (rough.js by @preetster)[https://github.com/rough-stuff/rough], (open-simplex-noise by @lmas)[https://github.com/lmas/opensimplex], and ofcourse (pixi.js by @pixijs)[https://github.com/pixijs] (3D Sphere)[https://jsbin.com/yifayiq/edit?html,css,js,output]
 
 
 

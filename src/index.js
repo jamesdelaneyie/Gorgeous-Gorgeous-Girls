@@ -7,7 +7,7 @@ import { rand, randFloat } from "./math.js";
 import { getPositionOnLine } from "./bezier.js";
 import { bezier, getEasing  } from "./easing.js";
 import { getColors } from "./colors.js";
-//import { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker } from "./pencil-case.js";
+import { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker } from "./pencil-case.js";
 
 // the 64 chars hex number fed to your algorithm
 //console.log(fxhash);
@@ -240,27 +240,7 @@ const addFillBackground = () => {
 }
 
 
-let drawFaceBackground = function(startX) {
-	let faceBackground = new PIXI.Graphics()
-	faceBackground.beginFill(0xffffff);
 
-	//Left Forehead
-	faceBackground.moveTo(startX + rand(70,190), rand(60, 130));
-	faceBackground.lineTo(startX, rand(400, 500));
-
-	//Cheek
-	faceBackground.lineTo(startX+rand(40,110), rand(700,850));
-	faceBackground.lineTo(startX+rand(150, 250), app.view.height);
-
-	//Chin
-	faceBackground.lineTo(startX+550, app.view.height);
-
-	//Right Cheek
-	faceBackground.lineTo(startX+674, rand(810, 970));
-	faceBackground.lineTo(startX+674, 230);
-	faceBackground.endFill();
-	artContainer.addChild(faceBackground);
-}
 
 let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, reverse=false) {
 
@@ -555,6 +535,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 			jitter: 0.7,
 			pressure: {
 				start: 10,
+				easing: "ease-in-out",
 				map: {
 		
 				}
@@ -564,8 +545,6 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 				magnitude: 0,//rand(0, 50),
 				smoothing: 0,
 			},
-			//	x: leftEyeX + rand(70, 100),
-			//	y: leftEyeY + rand(20, 60),
 			line: new line({
 				x: leftEyeX - 100, 
 				y: leftEyeY + 45,
@@ -582,7 +561,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 		var endEyeLidY = rand(-110, -90)
 		eyeLidMove = new Move({
 			iterations: 10,
-			jitter: 0.7,
+			jitter: 0.6,
 			pressure: {
 				start: 10,
 				end: 0,
@@ -673,7 +652,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 		layer: eyeContainer
 	})
 	
-	canvas.make(eyeLidBottomMark)
+	//canvas.make(eyeLidBottomMark)
 	
 	
 	
@@ -721,7 +700,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 		layer: eyeContainer
 	})
 	
-	canvas.make(eyeLashBottomMarkTwo)
+	//canvas.make(eyeLashBottomMarkTwo)
 	
 	
 	let eyeLashMarker = new Marker({
@@ -805,7 +784,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	}
 
 	for(let i = 0; i < eyeLashMarksTop.length; i++) {
-		canvas.make(eyeLashMarksTop[i])
+		//canvas.make(eyeLashMarksTop[i])
 	}
 	
 
@@ -898,7 +877,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	}
 
 	for(let i = 0; i < eyeLashMarks.length; i++) {
-		canvas.make(eyeLashMarks[i])
+		//canvas.make(eyeLashMarks[i])
 	}
 		
 
@@ -1002,8 +981,8 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	})
 
 
-	canvas.make(eyeLidFoldMark)
-	canvas.make(eyeBrowMark)
+	//canvas.make(eyeLidFoldMark)
+	//canvas.make(eyeBrowMark)
 
 
 
@@ -1065,12 +1044,118 @@ if(pupilDirectionX > 0) {
 
 let irisBorderWidth = rand(3,5)
 
-drawFaceBackground(350)
-drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
-drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
 
 
-let drawNose = () => {
+
+//drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
+//drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
+
+var leftOrRight = rand(0,1)
+var xAxisRotation = rand(0, 100)
+var yAxisRotation = rand((xAxisRotation * -1), xAxisRotation)
+
+
+var faceShapeContainer = new PIXI.Container()
+
+let drawFaceBackground = function(startX) {
+	let faceBackground = new PIXI.Graphics()
+	faceBackground.beginFill(0xffffff);
+
+	//Left Forehead
+	faceBackground.moveTo(600, 250);
+	faceBackground.lineTo(450, 350);
+	faceBackground.lineTo(350, 550);
+	if(leftOrRight) {
+		faceBackground.lineTo(350, 750);
+	} else {
+		faceBackground.lineTo(450, 750);
+	}
+	
+
+	//Cheek
+	faceBackground.lineTo(600, 950);
+	if(leftOrRight) {
+		faceBackground.lineTo(750, 750);
+	} else {
+		faceBackground.lineTo(750, 750);
+	}
+	//faceBackground.lineTo(750, 750);
+
+	faceBackground.lineTo(850, 550);
+	faceBackground.lineTo(800, 350);
+
+	//Chin
+	//faceBackground.lineTo(startX+550, app.view.height);
+
+	//Right Cheek
+	//faceBackground.lineTo(startX+674, rand(810, 970));
+	//faceBackground.lineTo(startX+674, 230);
+	faceBackground.endFill();
+	faceShapeContainer.addChild(faceBackground);
+}
+
+//drawFaceBackground(350)
+
+
+
+var faceShapeX = new Move({
+	line: new line({
+		x: 600, 
+		y: 250,
+		x2: 0,
+		y2: 700,
+		cp1: leftOrRight ? xAxisRotation : xAxisRotation * -1,
+		cp2: 250,
+		cp3: leftOrRight ? xAxisRotation : xAxisRotation * -1,
+		cp4: 350,
+	})
+})
+
+var faceShapeY = new Move({
+	line: new line({
+		x: 350,
+		y: 550,
+		x2: 500,
+		y2: 0,
+		cp1: leftOrRight ? 250 : rand(100, 250),
+		cp2: leftOrRight ? yAxisRotation : yAxisRotation * -1,
+		cp3: leftOrRight ? 250 : rand(100, 250),
+		cp4: leftOrRight ? yAxisRotation : yAxisRotation * -1,
+	})
+})
+
+
+
+var faceShapeXMark = new Mark({
+	marker: Pencil6B,
+	move: faceShapeX,
+	layer: faceShapeContainer
+})
+
+var faceShapeYMark = new Mark({
+	marker: Pencil6B,
+	move: faceShapeY,
+	layer: faceShapeContainer
+})
+
+//canvas.make(faceShapeXMark)
+//canvas.make(faceShapeYMark)
+//faceShapeContainer.rotation = randFloat(-1, 1)
+faceShapeContainer.x = 400
+faceShapeContainer.y = 550
+faceShapeContainer.pivot = new PIXI.Point(400, 550)
+//faceShapeContainer.skew = new PIXI.Point(randFloat(-0.05, 0.05), randFloat(-0.05, 0.05))
+//faceShapeContainer.angle = randFloat(-15, 15)
+
+// Save the position along the line of the face shapes
+// Then take the transforms applied (skew and angle) and apply them to the position saved
+// Then use that position to draw the eyes, nose, mouth, etc
+//artContainer.addChild(faceShapeContainer)
+
+
+
+
+let drawNose = (noseX, noseY) => {
 
 	let noseContainer = new PIXI.Container()
 
@@ -1079,7 +1164,7 @@ let drawNose = () => {
 
 	var noseMarker = new Marker({
 		color: hairColor,
-		material: { size: 0.25 },
+		material: { size: 0.25,  sizeJitter: 0.25 },
 		nib: { type: "oval", size: rand(1,4), endSize: rand(2,4), angle: 20, endAngle: 90 },
 		alpha: 0.1,
 		fadeEdges: true,
@@ -1216,7 +1301,103 @@ let drawNose = () => {
 	
 }
 
-drawNose()
+
+
+
+
+let headContainer = new PIXI.Container()
+let maxOffset = 200
+let randHeight = rand(300, 400)
+let headX = rand(300, 700)
+let headY = rand(300, 700)
+
+let ellipsePointsOne = []
+let ellipsePointsTwo = []
+
+let ellipseDrawing = function(cx, cy, ds, de, w, h, array) {
+	var semicircle = new PIXI.Graphics();
+	semicircle.lineStyle(1, 0xffffff, 1)
+	for (var i = ds; i < de; i ++) {
+	  var angle = i * ((Math.PI * 2) / 360);
+	  var x = Math.cos(angle) * w;
+	  var y = Math.sin(angle) * h;
+	  semicircle.beginFill(0xffffff);
+	  semicircle.arc(cx+x, cy+y, 2, 0, 3);
+	  semicircle.endFill();
+	  array.push({x: cx+x, y: cy+y})
+	}
+	headContainer.addChild(semicircle)
+  }
+
+
+
+
+
+let circleToDraw = new PIXI.Graphics()
+	circleToDraw.lineStyle(2, 0xffffff, 1)
+	circleToDraw.drawEllipse(headX, headY, 300, randHeight)
+	headContainer.addChild(circleToDraw)
+
+
+
+
+		let ellipseWidth = rand(50,maxOffset)
+		let ellipseWidth2 = rand(50,maxOffset)
+		
+
+
+	  //Y axis
+	  let randOutcome = rand(0, 1)
+	  if(randOutcome > 0.5) {
+		ellipseDrawing(headX, headY, 90, 270, ellipseWidth, randHeight, ellipsePointsOne)
+	  } else {
+		ellipseDrawing(headX, headY, 270, 450, ellipseWidth, randHeight, ellipsePointsOne)
+	  }
+
+
+	  //X axis
+	  let randOutcome2 = rand(0, 1)
+	  if(randOutcome2 > 0.5) {
+		ellipseDrawing(headX, headY, 0, 180, 300, ellipseWidth2, ellipsePointsTwo)
+	  } else {
+		ellipseDrawing(headX, headY, 180, 360, 300, ellipseWidth2, ellipsePointsTwo)
+	  }
+
+
+	  function findClosestPoints(points1, points2) {
+		let minDistance = Infinity;
+		let minIndices = [-1, -1];
+		for (let i = 0; i < points1.length; i++) {
+		  for (let j = 0; j < points2.length; j++) {
+			const distance = Math.sqrt((points1[i].x - points2[j].x)**2 + (points1[i].y - points2[j].y)**2);
+			if (distance < minDistance) {
+			  minDistance = distance;
+			  minIndices = [i, j];
+			}
+		  }
+		}
+		return minIndices;
+	  }
+
+	  let closestPoints = findClosestPoints(ellipsePointsOne, ellipsePointsTwo)
+
+	  //draw a circle at the closest point
+	  let circle = new PIXI.Graphics()
+	  circle.lineStyle(5, 0xffff00, 1)
+	  circle.drawCircle(ellipsePointsOne[closestPoints[0]].x, ellipsePointsOne[closestPoints[0]].y, 5)
+	  //artContainer.addChild(circle)
+	  //set the pivot of the headContainer to the center of the headContainer
+	  headContainer.pivot.x = headX
+	  headContainer.pivot.y = headY
+	  headContainer.x = headX
+	  headContainer.y = headY
+	  //rotate the headContainer
+	  headContainer.angle = rand(-15, 15)
+	  headContainer.addChild(circle)
+	  artContainer.addChild(headContainer)
+		
+	  //drawNose()
+
 
 
 

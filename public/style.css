@@ -25,6 +25,10 @@ aside {
   background-color: #323232;
   color: white;
   z-index: 20;
+  font-family: sans-serif;
+  > span {
+    display: block;
+  }
   > div {
     padding: 10px;
     font-family: monospace;

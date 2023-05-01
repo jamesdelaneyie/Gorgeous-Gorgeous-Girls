@@ -203,12 +203,12 @@ app.stage.on('pointerdown', function () {
 })
 //app.stage.addChild(trace)
 
-
+console.log(highlightColor)
 
 const addFillBackground = () => {
 
 	let fillBackgroundMarker = new Marker({
-		color: hairColor,
+		color: '#47eb7b',//hairColor,
 		material: {size: 0.5, sizeJitter: 0.2},
 		nib: { type: "round", size: 2},
 		alpha: 0.5
@@ -217,7 +217,7 @@ const addFillBackground = () => {
 	let backgroundTexture = new Fill({
 		x: 0, 
 		y: 0,
-		color: highlightColor,
+		color: '#19c0e6',//highlightColor,
 		width: app.view.width, 
 		height: app.view.height, 
 		shape: "circle",
@@ -1092,6 +1092,8 @@ let drawFaceBackground = function(startX) {
 	//faceBackground.lineTo(startX+674, 230);
 	faceBackground.endFill();
 	faceShapeContainer.addChild(faceBackground);
+
+	artContainer.addChild(faceShapeContainer)
 }
 
 //drawFaceBackground(350)
@@ -1304,15 +1306,21 @@ let drawNose = (noseX, noseY) => {
 
 
 
+function findClosestPoints(points1, points2) {
+	let minDistance = Infinity;
+	let minIndices = [-1, -1];
+	for (let i = 0; i < points1.length; i++) {
+	  for (let j = 0; j < points2.length; j++) {
+		const distance = Math.sqrt((points1[i].x - points2[j].x)**2 + (points1[i].y - points2[j].y)**2);
+		if (distance < minDistance) {
+		  minDistance = distance;
+		  minIndices = [i, j];
+		}
+	  }
+	}
+	return minIndices;
+}
 
-let headContainer = new PIXI.Container()
-let maxOffset = 200
-let randHeight = rand(300, 400)
-let headX = rand(300, 700)
-let headY = rand(300, 700)
-
-let ellipsePointsOne = []
-let ellipsePointsTwo = []
 
 let ellipseDrawing = function(cx, cy, ds, de, w, h, array) {
 	var semicircle = new PIXI.Graphics();
@@ -1333,70 +1341,183 @@ let ellipseDrawing = function(cx, cy, ds, de, w, h, array) {
 
 
 
-let circleToDraw = new PIXI.Graphics()
-	circleToDraw.lineStyle(2, 0xffffff, 1)
-	circleToDraw.drawEllipse(headX, headY, 300, randHeight)
-	headContainer.addChild(circleToDraw)
+
+
+/*
+ *
+ *  Draw the head shape
+ * 
+/*/
+
+const headContainer = new PIXI.Container()
+const headHeight = rand(300, 350)
+const headWidth = rand(270, 300)
+
+const headCentreX = rand(400, 550)
+const headCentreY = rand(400, 550)
+
+const YAxisEllipsePoints = []
+const XAxisEllipsePoints = []
+
+const YAxisMaxAngle = 200
+const XAxisMaxAngle = 200
+
+const YAxisEllipseWidth = rand(0, YAxisMaxAngle)
+const XAxisEllipseWidth = 0//rand(0, XAxisMaxAngle)
+
+
+// Skull Shape
+const headSkullShape = new PIXI.Graphics()
+headSkullShape.lineStyle(2, 0xffffff, 1)
+headSkullShape.drawEllipse(headCentreX, headCentreY, headWidth, headHeight)
+headContainer.addChild(headSkullShape)
+
+// Y Axis Sketch Line
+const Y_MIN_OUTCOME = 0.5;
+const Y_AXIS_LEFT_START = 90;
+const Y_AXIS_LEFT_END = 270;
+const Y_AXIS_RIGHT_START = 270;
+const Y_AXIS_RIGHT_END = 450;
+
+const YOutcome = rand(0, 1);
+const isLeft = YOutcome > Y_MIN_OUTCOME;
+const YStartAngle = isLeft ? Y_AXIS_LEFT_START : Y_AXIS_RIGHT_START;
+const YEndAngle = isLeft ? Y_AXIS_LEFT_END : Y_AXIS_RIGHT_END;
+
+ellipseDrawing(headCentreX, headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints);
+
+//Append the line isLeft to the aside in the DOM
+const aside = document.querySelector('aside');
+const headDirection = document.createElement('span');
+headDirection.classList.add('head-direction');
+headDirection.innerHTML = isLeft ? 'Facing Left' : 'Facing Right';
+aside.appendChild(headDirection);
+
+
+// X Axis Sketch Line
+const X_MIN_OUTCOME = 0.5;
+const X_AXIS_TOP_START = 0;
+const X_AXIS_TOP_END = 180;
+const X_AXIS_BOTTOM_START = 180;
+const X_AXIS_BOTTOM_END = 360;
+
+const XOutcome = rand(0, 1);
+const isDown = XOutcome > X_MIN_OUTCOME;
+const XStartAngle = isDown ? X_AXIS_TOP_START : X_AXIS_BOTTOM_START;
+const XEndAngle = isDown ? X_AXIS_TOP_END : X_AXIS_BOTTOM_END;
+
+ellipseDrawing(headCentreX, headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints);
+
+//Append the line isTop to the aside in the DOM
+const headDirection2 = document.createElement('span');
+headDirection2.classList.add('head-direction');
+headDirection2.innerHTML = isDown ? 'Facing Down' : 'Facing Up';
+aside.appendChild(headDirection2);
+
+// Get the centre of the face
+const closestPoints = findClosestPoints(YAxisEllipsePoints, XAxisEllipsePoints)
+const faceCentreX = YAxisEllipsePoints[closestPoints[0]].x
+const faceCentreY = YAxisEllipsePoints[closestPoints[0]].y
+
+// Calculate the distance for x and y between the headCentre and the faceCentre
+const faceCentreDistanceX = faceCentreX - headCentreX
+const faceCentreDistanceY = faceCentreY - headCentreY
+
+// Draw a circle at the centre of the face
+const faceCentrePoint = new PIXI.Graphics()
+faceCentrePoint.lineStyle(5, 0xffff00, 1)
+faceCentrePoint.drawCircle(faceCentreX, faceCentreY, 5)
+headContainer.addChild(faceCentrePoint)
+
+// Draw lines from the jaw to the chin to the centre of the face
+let rightCheekDistance = YOutcome > 0.5 ? YAxisEllipseWidth : -YAxisEllipseWidth
+let leftCheekDistance = YOutcome > 0.5 ? (headWidth - YAxisEllipseWidth) : (headWidth + YAxisEllipseWidth)
+
+const jawHeight = rand(50, 100)
+const jawBottomYStart = (headCentreY + headHeight + jawHeight)
+const jawBottomY = isDown ? jawBottomYStart - (faceCentreDistanceY/2) : jawBottomYStart + (faceCentreDistanceY * 1.5)
+const jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)
+const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
+
+let rightCheek = new PIXI.Graphics()
+rightCheek.lineStyle(2, 0xffff00, 1)
+rightCheek.moveTo(headCentreX + headWidth, headCentreY) // Right Jaw Top
+rightCheek.lineTo(headCentreX+200, jawEdgeY) // Jaw Edge
+rightCheek.lineTo(jawBottomX, jawBottomY) // Jaw Bottom
+headContainer.addChild(rightCheek)
+
+let leftCheek = new PIXI.Graphics()
+leftCheek.lineStyle(2, 0xffff00, 1)
+leftCheek.moveTo((headCentreX - rightCheekDistance) - leftCheekDistance, headCentreY) // Left Jaw Top
+leftCheek.lineTo((headCentreX - rightCheekDistance) - leftCheekDistance + 100, jawEdgeY) // Left Jaw Edge
+leftCheek.lineTo(jawBottomX, jawBottomY) // Left Jaw Bottom
+headContainer.addChild(leftCheek)
+	  
+// Draw a dotted line from the facecenter to jawbottomX and jawbottomY
+let dottedLine = new PIXI.Graphics()
+dottedLine.lineStyle(2, 0xffff00, 1)
+dottedLine.moveTo(faceCentreX, faceCentreY)
+dottedLine.lineTo(jawBottomX, jawBottomY)
+headContainer.addChild(dottedLine)
 
 
 
+headContainer.pivot.x = headCentreX
+headContainer.pivot.y = headCentreY
+headContainer.x = headCentreX
+headContainer.y = headCentreY
 
-		let ellipseWidth = rand(50,maxOffset)
-		let ellipseWidth2 = rand(50,maxOffset)
-		
+const headTiltAngle = rand(-15, 15)
+//headContainer.angle = headTiltAngle
 
-
-	  //Y axis
-	  let randOutcome = rand(0, 1)
-	  if(randOutcome > 0.5) {
-		ellipseDrawing(headX, headY, 90, 270, ellipseWidth, randHeight, ellipsePointsOne)
-	  } else {
-		ellipseDrawing(headX, headY, 270, 450, ellipseWidth, randHeight, ellipsePointsOne)
-	  }
+const headTilt = document.createElement('span');
+headTilt.innerHTML = 'Head Tilt: ' + headTiltAngle + '°';
+aside.appendChild(headTilt);
 
 
-	  //X axis
-	  let randOutcome2 = rand(0, 1)
-	  if(randOutcome2 > 0.5) {
-		ellipseDrawing(headX, headY, 0, 180, 300, ellipseWidth2, ellipsePointsTwo)
-	  } else {
-		ellipseDrawing(headX, headY, 180, 360, 300, ellipseWidth2, ellipsePointsTwo)
-	  }
+let leftEyeSketch = new PIXI.Graphics()
+leftEyeSketch.lineStyle(2, 0xff0000, 1)
+leftEyeSketch.drawEllipse(faceCentreX - 120, faceCentreY + 50, 70, 50)
+headContainer.addChild(leftEyeSketch)
+
+let rightEyeSketch = new PIXI.Graphics()
+rightEyeSketch.lineStyle(2, 0xff0000, 1)
+rightEyeSketch.drawEllipse(faceCentreX + 120, faceCentreY + 50, 70, 50)
+headContainer.addChild(rightEyeSketch)
+
+let noseBottomSketch = new PIXI.Graphics()
+noseBottomSketch.lineStyle(2, 0xff0000, 1)
+
+let noseXStart = faceCentreX - (XAxisEllipseWidth/4)
+let noseXEnd = noseXStart + 40
+
+noseBottomSketch.moveTo(noseXStart, faceCentreY + 180)
+noseBottomSketch.lineTo(noseXEnd, faceCentreY + 180)
+headContainer.addChild(noseBottomSketch)
+
+let mouthXStart = faceCentreX + (XAxisEllipseWidth/2)
+let mouthXEnd = mouthXStart + 100
+
+let mouthSketch = new PIXI.Graphics()
+mouthSketch.lineStyle(2, 0xff0000, 1)
+mouthSketch.moveTo(mouthXStart, faceCentreY + 220 + (jawHeight/2))
+mouthSketch.lineTo(mouthXEnd, faceCentreY + 220 + (jawHeight/2))
+headContainer.addChild(mouthSketch)
 
 
-	  function findClosestPoints(points1, points2) {
-		let minDistance = Infinity;
-		let minIndices = [-1, -1];
-		for (let i = 0; i < points1.length; i++) {
-		  for (let j = 0; j < points2.length; j++) {
-			const distance = Math.sqrt((points1[i].x - points2[j].x)**2 + (points1[i].y - points2[j].y)**2);
-			if (distance < minDistance) {
-			  minDistance = distance;
-			  minIndices = [i, j];
-			}
-		  }
-		}
-		return minIndices;
-	  }
-
-	  let closestPoints = findClosestPoints(ellipsePointsOne, ellipsePointsTwo)
-
-	  //draw a circle at the closest point
-	  let circle = new PIXI.Graphics()
-	  circle.lineStyle(5, 0xffff00, 1)
-	  circle.drawCircle(ellipsePointsOne[closestPoints[0]].x, ellipsePointsOne[closestPoints[0]].y, 5)
-	  //artContainer.addChild(circle)
-	  //set the pivot of the headContainer to the center of the headContainer
-	  headContainer.pivot.x = headX
-	  headContainer.pivot.y = headY
-	  headContainer.x = headX
-	  headContainer.y = headY
-	  //rotate the headContainer
-	  headContainer.angle = rand(-15, 15)
-	  headContainer.addChild(circle)
-	  artContainer.addChild(headContainer)
-		
+artContainer.addChild(headContainer)
+	  
 	  //drawNose()
+
+
+
+
+
+
+
+
+
+
 
 
 

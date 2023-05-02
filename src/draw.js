@@ -69,6 +69,7 @@ class Move {
         this.hold = options.hold || null;
         this.pressure = options.pressure || null;
         this.line = options.line || new line({density:this.density});
+        this.lines = options.lines || null;
 		this.iterations = options.iterations || 1;
 		this.jitter = options.jitter || 0;
         this.alphaJitter = options.alphaJitter || 0;
@@ -106,11 +107,30 @@ class Mark {
                 move.line.density = marker.moveStyles.density;
             }
         }
+
+        let bezierPoints
+
+        console.log(move.lines)
+
+        if(move.lines !== null) {
+            if(move.lines.length > 1) {
+                let allLinePoints = []
+                for(let i = 0; i < move.lines.length; i++) {
+                    let linePoints = createBezierPoints(move.lines[i][0], move.noise);
+                    if(move.lines[i][1] == true) {
+                        linePoints = linePoints.reverse()
+                    }
+                    allLinePoints.push(linePoints)
+                }
+                bezierPoints = allLinePoints.flat()
+            }
+        } else {
+            bezierPoints = createBezierPoints(move.line, move.noise);
+        }
         
-        let bezierPoints = createBezierPoints(move.line, move.noise);
 
         let lineGraphic = new PIXI.Container();
-        let spriteContainer = new PIXI.ParticleContainer();
+        let spriteContainer = new PIXI.ParticleContainer(500000);
 
         let color = PIXI.utils.string2hex(marker.color);
 
@@ -133,12 +153,12 @@ class Mark {
             if (move.pressure.map !== undefined) {
                 var ipo;
                 var xPoint1 = 0;
-                var xPoint2 = parseInt((bezierPoints.length / 20) * 1);
+                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
                 var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
                 var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
                 var points = [
                     { p: [xPoint1, 0] },
-                    { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint2, rand(0,100)], lower: [-30, 0], upper: [30, 0] },
                     { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
                     { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
                     { p: [bezierPoints.length, rand(0,100)] },
@@ -173,17 +193,17 @@ class Mark {
             }
         }
 
-        if(move.jitter == 0.7) {
+        if(move.jitter !== undefined) {
             var ipoJitter;
             var xPoint1 = 0;
-            var xPoint2 = parseInt((bezierPoints.length / 20) * 3);
+            var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
             var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
             var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
             var jitterPoints = [
-                { p: [xPoint1, 100] },
-                { p: [xPoint2, 0], lower: [0, 0], upper: [0, 0] },
-                { p: [xPoint3, 0], lower: [0, 0], upper: [0, 0] },
-                { p: [xPoint4, 0], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint1, rand(0,100)] },
+                { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
                 { p: [bezierPoints.length, 0] },
             ];
             var ipoJitter = new IPO(jitterPoints);
@@ -215,8 +235,6 @@ class Mark {
             for (var j = 0; j < bezierPoints.length; j++) {
 
                 var drawPoint = [bezierPoints[j].x, bezierPoints[j].y]
-
-                
 
                 if(move.pressure !== null) {
                     if(marker.nib.endSize !== undefined) {
@@ -321,7 +339,7 @@ class Mark {
                     
 
                     if(marker.useSprites == true) {
-                        console.log(size)
+                        //console.log(size)
                         let sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
                         sprite.width = size*2;
                         sprite.height = size*2;
@@ -395,7 +413,6 @@ class Mark {
                         } else {
                             dotGraphic.beginFill(color, alpha);
                         }
-                        //dotGraphic.beginFill(color, alpha);
                        
                        
 

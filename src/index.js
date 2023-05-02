@@ -172,9 +172,24 @@ if(projectSettings.colors) {
 	colors = getColors();
 }
 
-let hairColor = colors.hairColor;
-let highlightColor = colors.highlightColor;
-let multiplyColor = colors.multiplyColor;
+let hairColor = colors[0]//.hairColor;
+let highlightColor = colors[1]//.highlightColor;
+let multiplyColor = colors[2]//multiplyColor;
+
+console.log(colors)
+
+const addColorSwatchesToAside = (colors) => {
+	const colorSwatches = document.createElement("div")
+	colorSwatches.setAttribute("id", "color-swatches")
+	for(let i = 0; i < colors.length; i++) {
+		const colorSwatch = document.createElement("div")
+		colorSwatch.style.backgroundColor = colors[i]
+		colorSwatches.appendChild(colorSwatch)
+	}
+	document.querySelector("aside").appendChild(colorSwatches)
+}
+
+addColorSwatchesToAside(colors)
 
 
 const addFillBackground = (color) => {
@@ -1230,8 +1245,8 @@ const drawHeadSketch = () => {
 	const YAxisEllipsePoints = []
 	const XAxisEllipsePoints = []
 
-	const YAxisMaxAngle = 200
-	const XAxisMaxAngle = 200
+	const YAxisMaxAngle = 0//200
+	const XAxisMaxAngle = 0//200
 
 	const YAxisEllipseWidth = rand(0, YAxisMaxAngle)
 	const XAxisEllipseWidth = rand(0, XAxisMaxAngle)
@@ -1358,8 +1373,8 @@ const drawHeadSketch = () => {
 	headContainer.x = headCentreX
 	headContainer.y = headCentreY
 
-	const headTiltAngle = rand(-15, 15)
-	//headContainer.angle = headTiltAngle
+	const headTiltAngle = -1 //rand(-15, 15)
+	headContainer.angle = headTiltAngle
 
 	const headTilt = document.createElement('span');
 	headTilt.innerHTML = 'Head Tilt: ' + headTiltAngle + '°';
@@ -1425,18 +1440,28 @@ let faceDrawPositions = drawHeadSketch()
 
 
 let Pencil6B2 = new Marker({
-    color: hairColor, 
-	material: { size: 0.5, sizeJitter: 1 },
-	nib: { type: "oval", size: 4, endSize: 6 },
-	alpha: 0.1,
+    color: multiplyColor, 
+	material: { size: 0.5},
+	nib: { type: "round", size: 3, endSize: 4 },
+	alpha: 0.3,
 	fadeEdges: true,
+	useSprites: true,
     moveStyles: {
         iterations: 1,
-        density: 100,
-		jitter: 2,
+        density: 200,
+		//jitter: 0.7,
+		pressure: {
+			start: 1,
+			end: 1,
+			easing: 'easeOutQuad',
+			map: {
+
+			}
+		},
 		noise: {
-			frequency: 0.1,
-			magnitude: 1
+			frequency: 10,
+			magnitude: 2,
+			straighten: 0
 		}
     }
 })
@@ -1496,9 +1521,22 @@ let rightJawLine = new line({
 	y2: faceDrawPositions.rightJawBottom.y - faceDrawPositions.rightJawStart.y, 
 	cp3: faceDrawPositions.rightJawBottom.x - faceDrawPositions.rightJawStart.x + 100,
 })
+let leftJawLine = new line({
+	x: faceDrawPositions.leftJawStart.x,
+	y: faceDrawPositions.leftJawStart.y,
+	cp1: 0,
+	cp2: 150,
+	x2: faceDrawPositions.leftJawBottom.x - faceDrawPositions.leftJawStart.x,
+	y2: faceDrawPositions.leftJawBottom.y - faceDrawPositions.leftJawStart.y, 
+	cp3: faceDrawPositions.leftJawBottom.x - faceDrawPositions.leftJawStart.x - 100,
+})
+
+
+
 let rightJawDrawLine = new Move({
 	iterations: 1,
-	line: rightJawLine
+	line: rightJawLine,
+	lines: [[rightJawLine, false], [leftJawLine, true]]
 })
 let rightJawMark = new Mark({
 	name: "rightJaw",
@@ -1511,15 +1549,7 @@ let rightJawMark = new Mark({
 
 
 
-let leftJawLine = new line({
-	x: faceDrawPositions.leftJawStart.x,
-	y: faceDrawPositions.leftJawStart.y,
-	cp1: 0,
-	cp2: 150,
-	x2: faceDrawPositions.leftJawBottom.x - faceDrawPositions.leftJawStart.x,
-	y2: faceDrawPositions.leftJawBottom.y - faceDrawPositions.leftJawStart.y, 
-	cp3: faceDrawPositions.leftJawBottom.x - faceDrawPositions.leftJawStart.x - 100,
-})
+
 let leftJawDrawLine = new Move({
 	iterations: 1,
 	line: leftJawLine
@@ -1534,12 +1564,12 @@ let leftJawMark = new Mark({
 
 
 let rightNeckLine = new line({
-	x: faceDrawPositions.rightJawStart.x,
+	x: faceDrawPositions.rightJawStart.x - 25,
 	y: faceDrawPositions.rightJawStart.y,
 	cp1: -100,
 	cp2: 300,
 	x2: -80,
-	y2: 480,
+	y2: 450,
 	cp3: -150,
 	cp4: 300,
 })
@@ -1557,12 +1587,12 @@ let rightNeckMark = new Mark({
 })
 
 let leftNextLine = new line({
-	x: faceDrawPositions.leftJawStart.x,
+	x: faceDrawPositions.leftJawStart.x + 25,
 	y: faceDrawPositions.leftJawStart.y,
 	cp1: 100,
 	cp2: 300,
 	x2: 80,
-	y2: 480,
+	y2: 450,
 	cp3: 150,
 	cp4: 300,
 })
@@ -1586,7 +1616,7 @@ let leftNeckDrawLinePoints = createBezierPoints(leftNextLine)
 let neckShapePoints = rightNeckDrawLinePoints.concat(leftNeckDrawLinePoints.reverse())
 let neckShape = new PIXI.Graphics()
 neckShape.beginTextureFill({texture: whiteTextureFill})
-neckShape.lineStyle(8, 0xffffff, 1)
+neckShape.lineStyle(6, 0xffffff, 1)
 neckShape.drawPolygon(neckShapePoints)
 neckShape.endFill()
 
@@ -1602,7 +1632,7 @@ let headShapePoints = skullTopToRightJawLinePoints.concat(skullTopToLeftJawLineP
 
 let headShape = new PIXI.Graphics()
 headShape.beginTextureFill({texture: whiteTextureFill})
-headShape.lineStyle(8, 0xffffff, 1)
+headShape.lineStyle(0, 0xffffff, 1)
 headShape.drawPolygon(headShapePoints)
 headShape.endFill()
 
@@ -1614,7 +1644,7 @@ artContainer.addChild(headShape)
 canvas.make(skullTopToRightJawMark)
 canvas.make(skullTopToLeftJawMark)
 canvas.make(rightJawMark)
-canvas.make(leftJawMark)
+//canvas.make(leftJawMark)
 
 
 artContainer.addChild(faceDrawPositions.output)

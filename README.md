@@ -12,9 +12,78 @@ Every GGG is made from a series of `Marks` which are created using a `Marker` th
 
 A `Marker` can be thought of similar to a pencil, pen, crayon, or other drawing instrument. A `Marker` stores information related to how the `Mark` appears in terms of it's color and the qualities of how it "draws", e.g. it's "ink", nib size and shape. 
 
+```javascript
+const exampleMarker = new Marker({
+    color: "#000000",
+    alpha: 1,
+    density: 1000,
+    material: { 
+        size: 0.5
+    },
+    nib: {
+        shape: "round", 
+        size: 0.5,
+        sizeY: 0.5,
+        angle: 0,
+        endSize: 0.5,
+        endAngle: 0,
+    },
+    blend: "normal",
+    useSprites: true,
+    fillAreaReducer: 0.5,
+    fadeEdges: true,
+})
+```
+
 A `Move` stores information related to how the `Marker` "draws" such as a the path it follows (a `line`), the amount of pressure over the course of the `line`, the amount of "noise" added to the `line`, if there is any "hold" during the movement (time where the marker is kept in place), and other such properties.
 
+```javascript
+const exampleMove = new Move({
+    // How many times to make the move
+    iterations: 1,
+    //Amount of points in the line
+    density: 1000,
+    // How much the dots that make up the line go off course
+    jitter: 1,
+    // How much the opacity of each dot varies 
+    alphaJitter: 1,
+    // Draws the line in reverse
+    reverse: false,
+    // Holds the marker in place for a certain amount of time at start or end of line
+    hold: {
+        start: 10, 
+        end: 20
+    },
+    // Adds noise to the line's path
+    noise: {
+        frequency: 0.5,
+        amplitude: 0.5,
+        smoothing: 1,
+    },
+    // Controls the pressure of the marker over the course of the line
+    pressure: {
+        start: 1,
+        end: 2,
+        easing: "easingName",
+        map: {
+            0, 1, 2, 1, 4
+        }
+    }
+})
+
+```
+
 A `Mark` is created by a `Marker` making a `Move`. The `Marker` follows a `line`, which is a series of points that create a path, that is created from a cubic bezier curve (the attributes that make up a `line`).
+
+```javascript
+const exampleMark = new Mark({
+    name: "exampleName",
+    marker: exampleMarker,
+    move: exampleMove,
+    layer: pixiContainer,
+})
+```
+
 
 To create a `Mark`, a `Marker` moves step by step through the points of the path that make up the line, and at each step, draws a series of dots on the canvas. Each step along the line will have different properties for drawing those dots for that particular location, such as the color and opacity of the dots, their size, and the possible distance from the current center point that they can be placed. 
 

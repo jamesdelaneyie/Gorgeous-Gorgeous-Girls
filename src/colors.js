@@ -29,6 +29,8 @@ let getColors = (palette) => {
         highlightColor = ""+highlightColor+"";
         multiplyColor = ""+multiplyColor+"";
 
+        return [ ""+hairColor+"", ""+highlightColor+"", ""+multiplyColor+"" ]
+
     } else if (palette == "seagreen") {
         var hairColor = "#0fdd9a"
 	    var highlightColor = "#0fdd9a"
@@ -43,7 +45,7 @@ let getColors = (palette) => {
 	    var multiplyColor = "black"
     }
 
-    return { hairColor, highlightColor, multiplyColor }
+    return [ hairColor, highlightColor, multiplyColor ]
 
 }
 

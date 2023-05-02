@@ -109,7 +109,7 @@ var drawSVG = function(points, width, ipo, name){
   }
 
 
-  var svg = "<g width='"+width+"' height='100' style='overflow:visible'>";
+  var svg = "<g width='"+width+"' height='100' style='overflow:visible;'>";
 
   // curve
   svg += "<path fill='none' stroke-width='2' stroke='#f00' d='";
@@ -154,6 +154,7 @@ var drawSVG = function(points, width, ipo, name){
     svgElement.style.marginRight = "20px";
     svgElement.style.padding = "20px"
     svgElement.style.overflow = "visible";
+    svgElement.style.flex = "1 0 auto"
     svgElement.innerHTML = svg;
     if(svgWrapper){
       svgWrapper.appendChild(svgElement);

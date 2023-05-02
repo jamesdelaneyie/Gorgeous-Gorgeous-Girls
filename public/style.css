@@ -58,3 +58,11 @@ aside {
     border-radius: 4px;
   }
 }
+
+#color-swatches {
+  display: flex;
+  > div {
+    height: 30px;
+    width: 30px;
+  }
+}

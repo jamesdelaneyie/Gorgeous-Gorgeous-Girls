@@ -63,6 +63,21 @@ function lookup() {
     return ++i >= lookupTable.length ? lookupTable[i=0] : lookupTable[i];
 }
 
+function findClosestPoints(points1, points2) {
+	let minDistance = Infinity;
+	let minIndices = [-1, -1];
+	for (let i = 0; i < points1.length; i++) {
+	  for (let j = 0; j < points2.length; j++) {
+		const distance = Math.sqrt((points1[i].x - points2[j].x)**2 + (points1[i].y - points2[j].y)**2);
+		if (distance < minDistance) {
+		  minDistance = distance;
+		  minIndices = [i, j];
+		}
+	  }
+	}
+	return minIndices;
+}
+
 export {
 	rand,
 	randFloat,
@@ -74,5 +89,6 @@ export {
     lineLength,
     lookupTable,
     lookup,
-    midpoint
+    midpoint,
+	findClosestPoints
 };

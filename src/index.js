@@ -3,7 +3,7 @@ let startTime = Date.now();
 import * as PIXI from "pixi.js";
 import { Mark, Marker, Move, line } from "./draw.js";
 import { Fill } from "./fill.js";
-import { rand, randFloat } from "./math.js";
+import { rand, randFloat, findClosestPoints } from "./math.js";
 import { getPositionOnLine } from "./bezier.js";
 import { bezier, getEasing  } from "./easing.js";
 import { getColors } from "./colors.js";
@@ -67,7 +67,6 @@ const addColorSwatchButton = () => {
 }
 
 addAside()
-addRenderTime()
 addFXHashValues()
 addColorSwatchButton()
 
@@ -128,8 +127,8 @@ PIXI.utils.skipHello();
 
 // Create a Pixi Application
 let app = new PIXI.Application({
-	width: 2048,
-	height: 2048,
+	width: 1024,
+	height: 1024,
 	antialias: true,
 	autoDensity: true,
 	resolution: window.devicePixelRatio || 1,
@@ -154,17 +153,11 @@ document.body.appendChild(app.view);
 app.view.id = "canvas";
 
 const addCanvasBackground = () => {
-
-	var artContainer = new PIXI.Container();
-	/*var background = new PIXI.Graphics();
-	background.beginFill(0xffffff);
-	background.drawRect(0, 0, app.view.width, app.view.height);
-	background.endFill();
-	artContainer.addChild(background);*/
-	
+	let artContainer = new PIXI.Container();
 	app.stage.addChild(artContainer)
 	return artContainer
 }
+
 
 const artContainer = addCanvasBackground()
 
@@ -174,19 +167,14 @@ const artContainer = addCanvasBackground()
 
 let colors
 if(projectSettings.colors) {
-	
 	colors = getColors("random");
-
 } else {
-
 	colors = getColors();
-
 }
 
 let hairColor = colors.hairColor;
 let highlightColor = colors.highlightColor;
 let multiplyColor = colors.multiplyColor;
-//console.log(colors);
 
 
 const addFillBackground = (color) => {
@@ -219,7 +207,6 @@ const addFillBackground = (color) => {
 		}
 	});
 
-	//backgroundTexture.fillTexture(canvas)
 	return backgroundTexture
 
 }
@@ -984,11 +971,15 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 
 
 
+const createWhiteTexture = (color) => {
+	let whiteTexture = addFillBackground(color)
+	whiteTexture.fillTexture(canvas)
+	let theCanvas = document.getElementById('canvas')
+	let whiteTextureFill = new PIXI.Texture.from(theCanvas)
+	return whiteTextureFill
+}
 
-let whiteTexture = addFillBackground('#fcfcfc')
-whiteTexture.fillTexture(canvas)
-let theCanvas = document.getElementById('canvas')
-let whiteTextureFill = new PIXI.Texture.from(theCanvas)
+let whiteTextureFill = createWhiteTexture('#fcfcfc')
 
 
 let background = new PIXI.Graphics()
@@ -1044,10 +1035,6 @@ let irisBorderWidth = rand(3,5)
 
 
 
-
-
-
-var xAxisRotation = rand(0, 100)
 
 
 
@@ -1201,20 +1188,7 @@ let drawNose = (noseX, noseY) => {
 
 
 
-function findClosestPoints(points1, points2) {
-	let minDistance = Infinity;
-	let minIndices = [-1, -1];
-	for (let i = 0; i < points1.length; i++) {
-	  for (let j = 0; j < points2.length; j++) {
-		const distance = Math.sqrt((points1[i].x - points2[j].x)**2 + (points1[i].y - points2[j].y)**2);
-		if (distance < minDistance) {
-		  minDistance = distance;
-		  minIndices = [i, j];
-		}
-	  }
-	}
-	return minIndices;
-}
+
 
 
 let ellipseDrawing = function(cx, cy, ds, de, w, h, array, layer, color) {
@@ -1250,8 +1224,8 @@ const drawHeadSketch = () => {
 	const headHeight = rand(300, 350)
 	const headWidth = rand(270, 300)
 
-	const headCentreX = rand(400, 550)
-	const headCentreY = rand(400, 550)
+	const headCentreX = rand(500, 550)
+	const headCentreY = rand(500, 550)
 
 	const YAxisEllipsePoints = []
 	const XAxisEllipsePoints = []
@@ -1450,9 +1424,6 @@ let faceDrawPositions = drawHeadSketch()
 
 
 
-
-
-
 let Pencil6B2 = new Marker({
     color: hairColor, 
 	material: { size: 0.5, sizeJitter: 1 },
@@ -1460,8 +1431,8 @@ let Pencil6B2 = new Marker({
 	alpha: 0.1,
 	fadeEdges: true,
     moveStyles: {
-        iterations: 2,
-        density: 200,
+        iterations: 1,
+        density: 100,
 		jitter: 2,
 		noise: {
 			frequency: 0.1,
@@ -1488,7 +1459,7 @@ let skullTopToRightJawMark = new Mark({
 	move: skullTopToRightJaw,
 	layer: artContainer
 })
-canvas.make(skullTopToRightJawMark)
+
 
 
 
@@ -1510,7 +1481,7 @@ let skullTopToLeftJawMark = new Mark({
 	move: skullTopToLeftJaw,
 	layer: artContainer
 })
-canvas.make(skullTopToLeftJawMark)
+
 
 
 
@@ -1535,7 +1506,7 @@ let rightJawMark = new Mark({
 	move: rightJawDrawLine,
 	layer: artContainer
 })
-canvas.make(rightJawMark)
+
 
 
 
@@ -1559,7 +1530,67 @@ let leftJawMark = new Mark({
 	move: leftJawDrawLine,
 	layer: artContainer
 })
-canvas.make(leftJawMark)
+
+
+
+let rightNeckLine = new line({
+	x: faceDrawPositions.rightJawStart.x,
+	y: faceDrawPositions.rightJawStart.y,
+	cp1: -100,
+	cp2: 300,
+	x2: -80,
+	y2: 480,
+	cp3: -150,
+	cp4: 300,
+})
+
+let rightNeckDrawLine = new Move({
+	iterations: 1,
+	line: rightNeckLine
+})
+
+let rightNeckMark = new Mark({
+	name: "rightNeck",
+	marker: Pencil6B2,
+	move: rightNeckDrawLine,
+	layer: artContainer
+})
+
+let leftNextLine = new line({
+	x: faceDrawPositions.leftJawStart.x,
+	y: faceDrawPositions.leftJawStart.y,
+	cp1: 100,
+	cp2: 300,
+	x2: 80,
+	y2: 480,
+	cp3: 150,
+	cp4: 300,
+})
+
+let leftNeckDrawLine = new Move({
+	iterations: 1,
+	line: leftNextLine
+})
+
+let leftNeckMark = new Mark({
+	name: "leftNeck",
+	marker: Pencil6B2,
+	move: leftNeckDrawLine,
+	layer: artContainer
+})
+
+
+let rightNeckDrawLinePoints = createBezierPoints(rightNeckLine)
+let leftNeckDrawLinePoints = createBezierPoints(leftNextLine)
+
+let neckShapePoints = rightNeckDrawLinePoints.concat(leftNeckDrawLinePoints.reverse())
+let neckShape = new PIXI.Graphics()
+neckShape.beginTextureFill({texture: whiteTextureFill})
+neckShape.lineStyle(8, 0xffffff, 1)
+neckShape.drawPolygon(neckShapePoints)
+neckShape.endFill()
+
+artContainer.addChild(neckShape)
 
 
 let skullTopToRightJawLinePoints = createBezierPoints(skullTopToRightJawLine)
@@ -1569,19 +1600,28 @@ let leftJawLinePoints = createBezierPoints(leftJawLine)
 
 let headShapePoints = skullTopToRightJawLinePoints.concat(skullTopToLeftJawLinePoints.reverse()).concat(leftJawLinePoints.reverse()).concat(rightJawLinePoints)
 
-let leftJawFillShape = new PIXI.Graphics()
-leftJawFillShape.beginTextureFill({texture: whiteTextureFill})
-leftJawFillShape.drawPolygon(headShapePoints)
-leftJawFillShape.endFill()
-artContainer.addChild(leftJawFillShape)
+let headShape = new PIXI.Graphics()
+headShape.beginTextureFill({texture: whiteTextureFill})
+headShape.lineStyle(8, 0xffffff, 1)
+headShape.drawPolygon(headShapePoints)
+headShape.endFill()
 
+canvas.make(rightNeckMark)
+canvas.make(leftNeckMark)
+
+artContainer.addChild(headShape)
+
+canvas.make(skullTopToRightJawMark)
+canvas.make(skullTopToLeftJawMark)
+canvas.make(rightJawMark)
+canvas.make(leftJawMark)
 
 
 artContainer.addChild(faceDrawPositions.output)
 
 
-drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
-drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
+//drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
+//drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
 
 
 /*
@@ -1628,7 +1668,7 @@ var noseMark = new Mark({
 
 
 app.render();
-
+addRenderTime();
 
 
 /*

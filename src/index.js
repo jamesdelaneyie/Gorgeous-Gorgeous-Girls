@@ -8,7 +8,7 @@ import { getPositionOnLine } from "./bezier.js";
 import { bezier, getEasing  } from "./easing.js";
 import { getColors } from "./colors.js";
 import { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker } from "./pencil-case.js";
-
+import { createBezierPoints } from "./bezier.js";
 // the 64 chars hex number fed to your algorithm
 //console.log(fxhash);
 
@@ -128,15 +128,15 @@ PIXI.utils.skipHello();
 
 // Create a Pixi Application
 let app = new PIXI.Application({
-	width: 1024,
-	height: 1024,
+	width: 2048,
+	height: 2048,
 	antialias: true,
 	autoDensity: true,
 	resolution: window.devicePixelRatio || 1,
 	roundPixels: true,
 	autoStart: false,
 	powerPreference: "high-performance",
-	backgroundColor: 0xffffff,
+	backgroundColor: 0xff00ff,
 });
 
 // Setup the mark making named function 
@@ -151,15 +151,16 @@ let center = {
 };
 
 document.body.appendChild(app.view);
+app.view.id = "canvas";
 
 const addCanvasBackground = () => {
 
 	var artContainer = new PIXI.Container();
-	var background = new PIXI.Graphics();
+	/*var background = new PIXI.Graphics();
 	background.beginFill(0xffffff);
 	background.drawRect(0, 0, app.view.width, app.view.height);
 	background.endFill();
-	artContainer.addChild(background);
+	artContainer.addChild(background);*/
 	
 	app.stage.addChild(artContainer)
 	return artContainer
@@ -188,27 +189,9 @@ let multiplyColor = colors.multiplyColor;
 //console.log(colors);
 
 
-
-var trace = PIXI.Sprite.from('https://i.imgur.com/wMQki0s.png');
-trace.x = 176
-trace.y = 156
-trace.alpha = 0
-app.stage.interactive = true;
-app.stage.on('pointerdown', function () {
-	trace.alpha = 1;
-	app.render();
-}).on('pointerup', function () {
-	trace.alpha = 0;
-	app.render();
-})
-//app.stage.addChild(trace)
-
-console.log(highlightColor)
-
-const addFillBackground = () => {
+const addFillBackground = (color) => {
 
 	let fillBackgroundMarker = new Marker({
-		color: '#47eb7b',//hairColor,
 		material: {size: 0.5, sizeJitter: 0.2},
 		nib: { type: "round", size: 2},
 		alpha: 0.5
@@ -217,7 +200,7 @@ const addFillBackground = () => {
 	let backgroundTexture = new Fill({
 		x: 0, 
 		y: 0,
-		color: '#19c0e6',//highlightColor,
+		color: color,
 		width: app.view.width, 
 		height: app.view.height, 
 		shape: "circle",
@@ -236,7 +219,9 @@ const addFillBackground = () => {
 		}
 	});
 
-	backgroundTexture.fillTexture(canvas)
+	//backgroundTexture.fillTexture(canvas)
+	return backgroundTexture
+
 }
 
 
@@ -1000,7 +985,20 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 
 
 
-addFillBackground()
+let whiteTexture = addFillBackground('#fcfcfc')
+whiteTexture.fillTexture(canvas)
+let theCanvas = document.getElementById('canvas')
+let whiteTextureFill = new PIXI.Texture.from(theCanvas)
+
+
+let background = new PIXI.Graphics()
+background.beginTextureFill({texture: whiteTextureFill})
+background.drawRect(0, 0, 1, 1)
+background.endFill()
+artContainer.addChild(background)
+
+let backgroundTexture = addFillBackground(highlightColor)
+backgroundTexture.fillTexture(canvas)
 
 
 
@@ -1047,112 +1045,9 @@ let irisBorderWidth = rand(3,5)
 
 
 
-//drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
-//drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
 
-var leftOrRight = rand(0,1)
+
 var xAxisRotation = rand(0, 100)
-var yAxisRotation = rand((xAxisRotation * -1), xAxisRotation)
-
-
-var faceShapeContainer = new PIXI.Container()
-
-let drawFaceBackground = function(startX) {
-	let faceBackground = new PIXI.Graphics()
-	faceBackground.beginFill(0xffffff);
-
-	//Left Forehead
-	faceBackground.moveTo(600, 250);
-	faceBackground.lineTo(450, 350);
-	faceBackground.lineTo(350, 550);
-	if(leftOrRight) {
-		faceBackground.lineTo(350, 750);
-	} else {
-		faceBackground.lineTo(450, 750);
-	}
-	
-
-	//Cheek
-	faceBackground.lineTo(600, 950);
-	if(leftOrRight) {
-		faceBackground.lineTo(750, 750);
-	} else {
-		faceBackground.lineTo(750, 750);
-	}
-	//faceBackground.lineTo(750, 750);
-
-	faceBackground.lineTo(850, 550);
-	faceBackground.lineTo(800, 350);
-
-	//Chin
-	//faceBackground.lineTo(startX+550, app.view.height);
-
-	//Right Cheek
-	//faceBackground.lineTo(startX+674, rand(810, 970));
-	//faceBackground.lineTo(startX+674, 230);
-	faceBackground.endFill();
-	faceShapeContainer.addChild(faceBackground);
-
-	artContainer.addChild(faceShapeContainer)
-}
-
-//drawFaceBackground(350)
-
-
-
-var faceShapeX = new Move({
-	line: new line({
-		x: 600, 
-		y: 250,
-		x2: 0,
-		y2: 700,
-		cp1: leftOrRight ? xAxisRotation : xAxisRotation * -1,
-		cp2: 250,
-		cp3: leftOrRight ? xAxisRotation : xAxisRotation * -1,
-		cp4: 350,
-	})
-})
-
-var faceShapeY = new Move({
-	line: new line({
-		x: 350,
-		y: 550,
-		x2: 500,
-		y2: 0,
-		cp1: leftOrRight ? 250 : rand(100, 250),
-		cp2: leftOrRight ? yAxisRotation : yAxisRotation * -1,
-		cp3: leftOrRight ? 250 : rand(100, 250),
-		cp4: leftOrRight ? yAxisRotation : yAxisRotation * -1,
-	})
-})
-
-
-
-var faceShapeXMark = new Mark({
-	marker: Pencil6B,
-	move: faceShapeX,
-	layer: faceShapeContainer
-})
-
-var faceShapeYMark = new Mark({
-	marker: Pencil6B,
-	move: faceShapeY,
-	layer: faceShapeContainer
-})
-
-//canvas.make(faceShapeXMark)
-//canvas.make(faceShapeYMark)
-//faceShapeContainer.rotation = randFloat(-1, 1)
-faceShapeContainer.x = 400
-faceShapeContainer.y = 550
-faceShapeContainer.pivot = new PIXI.Point(400, 550)
-//faceShapeContainer.skew = new PIXI.Point(randFloat(-0.05, 0.05), randFloat(-0.05, 0.05))
-//faceShapeContainer.angle = randFloat(-15, 15)
-
-// Save the position along the line of the face shapes
-// Then take the transforms applied (skew and angle) and apply them to the position saved
-// Then use that position to draw the eyes, nose, mouth, etc
-//artContainer.addChild(faceShapeContainer)
 
 
 
@@ -1322,20 +1217,20 @@ function findClosestPoints(points1, points2) {
 }
 
 
-let ellipseDrawing = function(cx, cy, ds, de, w, h, array) {
+let ellipseDrawing = function(cx, cy, ds, de, w, h, array, layer, color) {
 	var semicircle = new PIXI.Graphics();
-	semicircle.lineStyle(1, 0xffffff, 1)
+	semicircle.lineStyle(1, color, 1)
 	for (var i = ds; i < de; i ++) {
 	  var angle = i * ((Math.PI * 2) / 360);
 	  var x = Math.cos(angle) * w;
 	  var y = Math.sin(angle) * h;
-	  semicircle.beginFill(0xffffff);
+	  semicircle.beginFill(color);
 	  semicircle.arc(cx+x, cy+y, 2, 0, 3);
 	  semicircle.endFill();
 	  array.push({x: cx+x, y: cy+y})
 	}
-	headContainer.addChild(semicircle)
-  }
+	layer.addChild(semicircle)
+}
 
 
 
@@ -1349,168 +1244,376 @@ let ellipseDrawing = function(cx, cy, ds, de, w, h, array) {
  * 
 /*/
 
-const headContainer = new PIXI.Container()
-const headHeight = rand(300, 350)
-const headWidth = rand(270, 300)
+const drawHeadSketch = () => {
 
-const headCentreX = rand(400, 550)
-const headCentreY = rand(400, 550)
+	const headContainer = new PIXI.Container()
+	const headHeight = rand(300, 350)
+	const headWidth = rand(270, 300)
 
-const YAxisEllipsePoints = []
-const XAxisEllipsePoints = []
+	const headCentreX = rand(400, 550)
+	const headCentreY = rand(400, 550)
 
-const YAxisMaxAngle = 200
-const XAxisMaxAngle = 200
+	const YAxisEllipsePoints = []
+	const XAxisEllipsePoints = []
 
-const YAxisEllipseWidth = rand(0, YAxisMaxAngle)
-const XAxisEllipseWidth = 0//rand(0, XAxisMaxAngle)
+	const YAxisMaxAngle = 200
+	const XAxisMaxAngle = 200
 
+	const YAxisEllipseWidth = rand(0, YAxisMaxAngle)
+	const XAxisEllipseWidth = rand(0, XAxisMaxAngle)
 
-// Skull Shape
-const headSkullShape = new PIXI.Graphics()
-headSkullShape.lineStyle(2, 0xffffff, 1)
-headSkullShape.drawEllipse(headCentreX, headCentreY, headWidth, headHeight)
-headContainer.addChild(headSkullShape)
-
-// Y Axis Sketch Line
-const Y_MIN_OUTCOME = 0.5;
-const Y_AXIS_LEFT_START = 90;
-const Y_AXIS_LEFT_END = 270;
-const Y_AXIS_RIGHT_START = 270;
-const Y_AXIS_RIGHT_END = 450;
-
-const YOutcome = rand(0, 1);
-const isLeft = YOutcome > Y_MIN_OUTCOME;
-const YStartAngle = isLeft ? Y_AXIS_LEFT_START : Y_AXIS_RIGHT_START;
-const YEndAngle = isLeft ? Y_AXIS_LEFT_END : Y_AXIS_RIGHT_END;
-
-ellipseDrawing(headCentreX, headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints);
-
-//Append the line isLeft to the aside in the DOM
-const aside = document.querySelector('aside');
-const headDirection = document.createElement('span');
-headDirection.classList.add('head-direction');
-headDirection.innerHTML = isLeft ? 'Facing Left' : 'Facing Right';
-aside.appendChild(headDirection);
+	const skullColor = 0x0000ff
+	const jawColor = 0x0000ff
+	const centrePointColor = 0x0000ff
+	const faceSketchesColor = 0xff0000
 
 
-// X Axis Sketch Line
-const X_MIN_OUTCOME = 0.5;
-const X_AXIS_TOP_START = 0;
-const X_AXIS_TOP_END = 180;
-const X_AXIS_BOTTOM_START = 180;
-const X_AXIS_BOTTOM_END = 360;
+	// Skull Shape
+	const headSkullShape = new PIXI.Graphics()
+	headSkullShape.lineStyle(2, skullColor, 1)
+	headSkullShape.drawEllipse(headCentreX, headCentreY, headWidth, headHeight)
+	headContainer.addChild(headSkullShape)
 
-const XOutcome = rand(0, 1);
-const isDown = XOutcome > X_MIN_OUTCOME;
-const XStartAngle = isDown ? X_AXIS_TOP_START : X_AXIS_BOTTOM_START;
-const XEndAngle = isDown ? X_AXIS_TOP_END : X_AXIS_BOTTOM_END;
+	// Get the top point of the skullshape
+	const skullTopPoint = {x: headCentreX, y: headCentreY - headHeight}
 
-ellipseDrawing(headCentreX, headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints);
+	// Y Axis Sketch Line
+	const Y_MIN_OUTCOME = 0.5;
+	const Y_AXIS_LEFT_START = 90;
+	const Y_AXIS_LEFT_END = 270;
+	const Y_AXIS_RIGHT_START = 270;
+	const Y_AXIS_RIGHT_END = 450;
 
-//Append the line isTop to the aside in the DOM
-const headDirection2 = document.createElement('span');
-headDirection2.classList.add('head-direction');
-headDirection2.innerHTML = isDown ? 'Facing Down' : 'Facing Up';
-aside.appendChild(headDirection2);
+	const YOutcome = rand(0, 1);
+	const isLeft = YOutcome > Y_MIN_OUTCOME;
+	const YStartAngle = isLeft ? Y_AXIS_LEFT_START : Y_AXIS_RIGHT_START;
+	const YEndAngle = isLeft ? Y_AXIS_LEFT_END : Y_AXIS_RIGHT_END;
 
-// Get the centre of the face
-const closestPoints = findClosestPoints(YAxisEllipsePoints, XAxisEllipsePoints)
-const faceCentreX = YAxisEllipsePoints[closestPoints[0]].x
-const faceCentreY = YAxisEllipsePoints[closestPoints[0]].y
+	ellipseDrawing(headCentreX, headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
 
-// Calculate the distance for x and y between the headCentre and the faceCentre
-const faceCentreDistanceX = faceCentreX - headCentreX
-const faceCentreDistanceY = faceCentreY - headCentreY
-
-// Draw a circle at the centre of the face
-const faceCentrePoint = new PIXI.Graphics()
-faceCentrePoint.lineStyle(5, 0xffff00, 1)
-faceCentrePoint.drawCircle(faceCentreX, faceCentreY, 5)
-headContainer.addChild(faceCentrePoint)
-
-// Draw lines from the jaw to the chin to the centre of the face
-let rightCheekDistance = YOutcome > 0.5 ? YAxisEllipseWidth : -YAxisEllipseWidth
-let leftCheekDistance = YOutcome > 0.5 ? (headWidth - YAxisEllipseWidth) : (headWidth + YAxisEllipseWidth)
-
-const jawHeight = rand(50, 100)
-const jawBottomYStart = (headCentreY + headHeight + jawHeight)
-const jawBottomY = isDown ? jawBottomYStart - (faceCentreDistanceY/2) : jawBottomYStart + (faceCentreDistanceY * 1.5)
-const jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)
-const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
-
-let rightCheek = new PIXI.Graphics()
-rightCheek.lineStyle(2, 0xffff00, 1)
-rightCheek.moveTo(headCentreX + headWidth, headCentreY) // Right Jaw Top
-rightCheek.lineTo(headCentreX+200, jawEdgeY) // Jaw Edge
-rightCheek.lineTo(jawBottomX, jawBottomY) // Jaw Bottom
-headContainer.addChild(rightCheek)
-
-let leftCheek = new PIXI.Graphics()
-leftCheek.lineStyle(2, 0xffff00, 1)
-leftCheek.moveTo((headCentreX - rightCheekDistance) - leftCheekDistance, headCentreY) // Left Jaw Top
-leftCheek.lineTo((headCentreX - rightCheekDistance) - leftCheekDistance + 100, jawEdgeY) // Left Jaw Edge
-leftCheek.lineTo(jawBottomX, jawBottomY) // Left Jaw Bottom
-headContainer.addChild(leftCheek)
-	  
-// Draw a dotted line from the facecenter to jawbottomX and jawbottomY
-let dottedLine = new PIXI.Graphics()
-dottedLine.lineStyle(2, 0xffff00, 1)
-dottedLine.moveTo(faceCentreX, faceCentreY)
-dottedLine.lineTo(jawBottomX, jawBottomY)
-headContainer.addChild(dottedLine)
+	//Append the line isLeft to the aside in the DOM
+	const aside = document.querySelector('aside');
+	const headDirection = document.createElement('span');
+	headDirection.classList.add('head-direction');
+	headDirection.innerHTML = isLeft ? 'Facing Left' : 'Facing Right';
+	aside.appendChild(headDirection);
 
 
+	// X Axis Sketch Line
+	const X_MIN_OUTCOME = 0.5;
+	const X_AXIS_TOP_START = 0;
+	const X_AXIS_TOP_END = 180;
+	const X_AXIS_BOTTOM_START = 180;
+	const X_AXIS_BOTTOM_END = 360;
 
-headContainer.pivot.x = headCentreX
-headContainer.pivot.y = headCentreY
-headContainer.x = headCentreX
-headContainer.y = headCentreY
+	const XOutcome = rand(0, 1);
+	const isDown = XOutcome > X_MIN_OUTCOME;
+	const XStartAngle = isDown ? X_AXIS_TOP_START : X_AXIS_BOTTOM_START;
+	const XEndAngle = isDown ? X_AXIS_TOP_END : X_AXIS_BOTTOM_END;
 
-const headTiltAngle = rand(-15, 15)
-//headContainer.angle = headTiltAngle
+	ellipseDrawing(headCentreX, headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
 
-const headTilt = document.createElement('span');
-headTilt.innerHTML = 'Head Tilt: ' + headTiltAngle + '°';
-aside.appendChild(headTilt);
+	//Append the line isTop to the aside in the DOM
+	const headDirection2 = document.createElement('span');
+	headDirection2.classList.add('head-direction');
+	headDirection2.innerHTML = isDown ? 'Facing Down' : 'Facing Up';
+	aside.appendChild(headDirection2);
+
+	// Get the centre of the face
+	const closestPoints = findClosestPoints(YAxisEllipsePoints, XAxisEllipsePoints)
+	const faceCentreX = YAxisEllipsePoints[closestPoints[0]].x
+	const faceCentreY = YAxisEllipsePoints[closestPoints[0]].y
+
+	// Calculate the distance for x and y between the headCentre and the faceCentre
+	const faceCentreDistanceX = faceCentreX - headCentreX
+	const faceCentreDistanceY = faceCentreY - headCentreY
+
+	// Draw a circle at the centre of the face
+	const faceCentrePoint = new PIXI.Graphics()
+	faceCentrePoint.lineStyle(2, centrePointColor, 1)
+	faceCentrePoint.drawCircle(faceCentreX, faceCentreY, 5)
+	headContainer.addChild(faceCentrePoint)
+
+	// Draw lines from the jaw to the chin to the centre of the face
+	let rightCheekDistance = YOutcome > 0.5 ? YAxisEllipseWidth : -YAxisEllipseWidth
+	let leftCheekDistance = YOutcome > 0.5 ? (headWidth - YAxisEllipseWidth) : (headWidth + YAxisEllipseWidth)
+
+	const jawHeight = rand(50, 100)
+	const jawBottomYStart = (headCentreY + headHeight + jawHeight)
+	const jawBottomY = isDown ? jawBottomYStart - (faceCentreDistanceY/2) : jawBottomYStart + (faceCentreDistanceY * 1.5)
+	const jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)
+	const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) + rand(-75, 0): headCentreY + headHeight + (faceCentreDistanceY)
+
+	let rightCheek = new PIXI.Graphics()
+	rightCheek.lineStyle(2, jawColor, 1)
+
+	const rightJawStart = {x: headCentreX + headWidth, y: headCentreY + 50}
+	const rightJawEdge = {x: headCentreX + 200, y: jawEdgeY}
+	const rightJawBottom = {x: jawBottomX, y: jawBottomY}
 
 
-let leftEyeSketch = new PIXI.Graphics()
-leftEyeSketch.lineStyle(2, 0xff0000, 1)
-leftEyeSketch.drawEllipse(faceCentreX - 120, faceCentreY + 50, 70, 50)
-headContainer.addChild(leftEyeSketch)
+	rightCheek.moveTo(rightJawStart.x, rightJawStart.y) // Right Jaw Top
+	rightCheek.lineTo(rightJawEdge.x, rightJawEdge.y) // Jaw Edge
+	rightCheek.lineTo(rightJawBottom.x, rightJawBottom.y) // Jaw Bottom
+	headContainer.addChild(rightCheek)
 
-let rightEyeSketch = new PIXI.Graphics()
-rightEyeSketch.lineStyle(2, 0xff0000, 1)
-rightEyeSketch.drawEllipse(faceCentreX + 120, faceCentreY + 50, 70, 50)
-headContainer.addChild(rightEyeSketch)
+	let leftCheek = new PIXI.Graphics()
+	leftCheek.lineStyle(2, jawColor, 1)
 
-let noseBottomSketch = new PIXI.Graphics()
-noseBottomSketch.lineStyle(2, 0xff0000, 1)
+	const leftJawStart = {x: (headCentreX - rightCheekDistance) - leftCheekDistance, y: headCentreY + 50}
+	const leftJawEdge = {x: (headCentreX - rightCheekDistance) - leftCheekDistance + 100, y: jawEdgeY}
+	const leftJawBottom = {x: jawBottomX, y: jawBottomY}
 
-let noseXStart = faceCentreX - (XAxisEllipseWidth/4)
-let noseXEnd = noseXStart + 40
+	leftCheek.moveTo(leftJawStart.x, leftJawStart.y) // Left Jaw Top
+	leftCheek.lineTo(leftJawEdge.x, leftJawEdge.y) // Left Jaw Edge
+	leftCheek.lineTo(leftJawBottom.x, leftJawBottom.y) // Left Jaw Bottom
 
-noseBottomSketch.moveTo(noseXStart, faceCentreY + 180)
-noseBottomSketch.lineTo(noseXEnd, faceCentreY + 180)
-headContainer.addChild(noseBottomSketch)
-
-let mouthXStart = faceCentreX + (XAxisEllipseWidth/2)
-let mouthXEnd = mouthXStart + 100
-
-let mouthSketch = new PIXI.Graphics()
-mouthSketch.lineStyle(2, 0xff0000, 1)
-mouthSketch.moveTo(mouthXStart, faceCentreY + 220 + (jawHeight/2))
-mouthSketch.lineTo(mouthXEnd, faceCentreY + 220 + (jawHeight/2))
-headContainer.addChild(mouthSketch)
-
-
-artContainer.addChild(headContainer)
-	  
-	  //drawNose()
+	headContainer.addChild(leftCheek)
+		
+	// Draw a dotted line from the facecenter to jawbottomX and jawbottomY
+	let dottedLine = new PIXI.Graphics()
+	dottedLine.lineStyle(2, jawColor, 1)
+	dottedLine.moveTo(faceCentreX, faceCentreY)
+	dottedLine.lineTo(jawBottomX, jawBottomY)
+	headContainer.addChild(dottedLine)
 
 
 
+	headContainer.pivot.x = headCentreX
+	headContainer.pivot.y = headCentreY
+	headContainer.x = headCentreX
+	headContainer.y = headCentreY
+
+	const headTiltAngle = rand(-15, 15)
+	//headContainer.angle = headTiltAngle
+
+	const headTilt = document.createElement('span');
+	headTilt.innerHTML = 'Head Tilt: ' + headTiltAngle + '°';
+	aside.appendChild(headTilt);
+
+
+	let leftEyeSketch = new PIXI.Graphics()
+	leftEyeSketch.lineStyle(2, faceSketchesColor, 1)
+	leftEyeSketch.drawEllipse(faceCentreX - 120, faceCentreY + 50, 70, 50)
+	//headContainer.addChild(leftEyeSketch)
+
+	let rightEyeSketch = new PIXI.Graphics()
+	rightEyeSketch.lineStyle(2, faceSketchesColor, 1)
+	rightEyeSketch.drawEllipse(faceCentreX + 120, faceCentreY + 50, 70, 50)
+	//headContainer.addChild(rightEyeSketch)
+
+	let noseBottomSketch = new PIXI.Graphics()
+	noseBottomSketch.lineStyle(2, faceSketchesColor, 1)
+
+	let noseXStart = faceCentreX - (XAxisEllipseWidth/4)
+	let noseXEnd = noseXStart + 40
+
+	noseBottomSketch.moveTo(noseXStart, faceCentreY + 180)
+	noseBottomSketch.lineTo(noseXEnd, faceCentreY + 180)
+	//headContainer.addChild(noseBottomSketch)
+
+	let mouthXStart = faceCentreX + (XAxisEllipseWidth/2)
+	let mouthXEnd = mouthXStart + 100
+
+	let mouthSketch = new PIXI.Graphics()
+	mouthSketch.lineStyle(2, faceSketchesColor, 1)
+	mouthSketch.moveTo(mouthXStart, faceCentreY + 220 + (jawHeight/2))
+	mouthSketch.lineTo(mouthXEnd, faceCentreY + 220 + (jawHeight/2))
+	//headContainer.addChild(mouthSketch)
+
+	let hairLineSketch = new PIXI.Graphics()
+	hairLineSketch.lineStyle(2, faceSketchesColor, 1)
+	hairLineSketch.moveTo(faceCentreX - (XAxisEllipseWidth/2), faceCentreY - 180)
+	hairLineSketch.lineTo(faceCentreX + (XAxisEllipseWidth/2), faceCentreY - 180)
+	//headContainer.addChild(hairLineSketch)
+
+
+	//artContainer.addChild(headContainer)
+	headContainer.alpha = 0.05
+
+	return {
+		headWidth: headWidth,
+		headHeight: headHeight,
+		skullTopPoint: skullTopPoint, 
+		rightJawStart: rightJawStart, 
+		rightJawEdge: rightJawEdge, 
+		rightJawBottom: rightJawBottom, 
+		leftJawStart: leftJawStart, 
+		leftJawEdge: leftJawEdge, 
+		leftJawBottom: leftJawBottom,
+		output: headContainer
+	}
+
+}
+
+let faceDrawPositions = drawHeadSketch()
+
+
+
+
+
+
+let Pencil6B2 = new Marker({
+    color: hairColor, 
+	material: { size: 0.5, sizeJitter: 1 },
+	nib: { type: "oval", size: 4, endSize: 6 },
+	alpha: 0.1,
+	fadeEdges: true,
+    moveStyles: {
+        iterations: 2,
+        density: 200,
+		jitter: 2,
+		noise: {
+			frequency: 0.1,
+			magnitude: 1
+		}
+    }
+})
+
+let skullTopToRightJawLine = new line({
+	x: faceDrawPositions.skullTopPoint.x,
+	y: faceDrawPositions.skullTopPoint.y,
+	cp1: faceDrawPositions.headWidth,
+	cp2: 0,
+	x2: faceDrawPositions.rightJawStart.x - faceDrawPositions.skullTopPoint.x,
+	y2: faceDrawPositions.rightJawStart.y - faceDrawPositions.skullTopPoint.y,
+})
+let skullTopToRightJaw = new Move({
+	iterations: 1,
+	line: skullTopToRightJawLine
+})
+let skullTopToRightJawMark = new Mark({
+	name: "skullTopToRightJaw",
+	marker: Pencil6B2,
+	move: skullTopToRightJaw,
+	layer: artContainer
+})
+canvas.make(skullTopToRightJawMark)
+
+
+
+let skullTopToLeftJawLine = new line({
+	x: faceDrawPositions.skullTopPoint.x,
+	y: faceDrawPositions.skullTopPoint.y,
+	cp1: -faceDrawPositions.headWidth,
+	cp2: 0,
+	x2: faceDrawPositions.leftJawStart.x - faceDrawPositions.skullTopPoint.x,
+	y2: faceDrawPositions.leftJawStart.y - faceDrawPositions.skullTopPoint.y,
+})
+let skullTopToLeftJaw = new Move({
+	iterations: 1,
+	line: skullTopToLeftJawLine
+})
+let skullTopToLeftJawMark = new Mark({
+	name: "skullTopToLeftJaw",
+	marker: Pencil6B2,
+	move: skullTopToLeftJaw,
+	layer: artContainer
+})
+canvas.make(skullTopToLeftJawMark)
+
+
+
+
+
+let rightJawLine = new line({
+	x: faceDrawPositions.rightJawStart.x,
+	y: faceDrawPositions.rightJawStart.y,
+	cp1: 0,
+	cp2: 150,
+	x2: faceDrawPositions.rightJawBottom.x - faceDrawPositions.rightJawStart.x,
+	y2: faceDrawPositions.rightJawBottom.y - faceDrawPositions.rightJawStart.y, 
+	cp3: faceDrawPositions.rightJawBottom.x - faceDrawPositions.rightJawStart.x + 100,
+})
+let rightJawDrawLine = new Move({
+	iterations: 1,
+	line: rightJawLine
+})
+let rightJawMark = new Mark({
+	name: "rightJaw",
+	marker: Pencil6B2,
+	move: rightJawDrawLine,
+	layer: artContainer
+})
+canvas.make(rightJawMark)
+
+
+
+
+let leftJawLine = new line({
+	x: faceDrawPositions.leftJawStart.x,
+	y: faceDrawPositions.leftJawStart.y,
+	cp1: 0,
+	cp2: 150,
+	x2: faceDrawPositions.leftJawBottom.x - faceDrawPositions.leftJawStart.x,
+	y2: faceDrawPositions.leftJawBottom.y - faceDrawPositions.leftJawStart.y, 
+	cp3: faceDrawPositions.leftJawBottom.x - faceDrawPositions.leftJawStart.x - 100,
+})
+let leftJawDrawLine = new Move({
+	iterations: 1,
+	line: leftJawLine
+})
+let leftJawMark = new Mark({
+	name: "leftJaw",
+	marker: Pencil6B2,
+	move: leftJawDrawLine,
+	layer: artContainer
+})
+canvas.make(leftJawMark)
+
+
+let skullTopToRightJawLinePoints = createBezierPoints(skullTopToRightJawLine)
+let skullTopToLeftJawLinePoints = createBezierPoints(skullTopToLeftJawLine)
+let rightJawLinePoints = createBezierPoints(rightJawLine)
+let leftJawLinePoints = createBezierPoints(leftJawLine)
+
+let headShapePoints = skullTopToRightJawLinePoints.concat(skullTopToLeftJawLinePoints.reverse()).concat(leftJawLinePoints.reverse()).concat(rightJawLinePoints)
+
+let leftJawFillShape = new PIXI.Graphics()
+leftJawFillShape.beginTextureFill({texture: whiteTextureFill})
+leftJawFillShape.drawPolygon(headShapePoints)
+leftJawFillShape.endFill()
+artContainer.addChild(leftJawFillShape)
+
+
+
+artContainer.addChild(faceDrawPositions.output)
+
+
+drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
+drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
+
+
+/*
+var noseMove = new Move({
+	iterations: 1,
+	jitter: 0.5,
+	pressure: {
+		start: 10,
+		easing: 'ease-in-out',
+		end: 2
+	},
+	noise: {
+		frequency: 0.01,//randFloat(0.01, 0.03),
+		magnitude: 1,//rand(0, 50),
+		smoothing: 0,
+	},
+	line: new line({
+		x: noseX+10, 
+		y: noseY+5,
+		cp1: rand(40, 50),
+		cp2: rand(25, 35),
+		x2: rand(50, 70),
+		y2: 0,
+	})
+})
+
+var noseMark = new Mark({
+	name: "nose",
+	marker: noseMarker,
+	move: noseMove,
+	layer: noseContainer
+})*/
 
 
 

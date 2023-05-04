@@ -14,23 +14,32 @@ A `Marker` can be thought of similar to a pencil, pen, crayon, or other drawing 
 
 ```javascript
 const exampleMarker = new Marker({
+    // color of the marker
     color: "#000000",
+    // opacity of the marker
     alpha: 1,
+    // how many individual points make up the line
     density: 1000,
+    // the size of the individual points
     material: { 
         size: 0.5
     },
+    // the qualities of the nib of the marker
     nib: {
-        shape: "round", 
-        size: 0.5,
-        sizeY: 0.5,
-        angle: 0,
-        endSize: 0.5,
-        endAngle: 0,
+        shape: "round", //round, oval, square
+        size: 0.5, // the width of the nib
+        sizeY: 0.5, // only used if shape is oval
+        angle: 0, // only used if shape is oval or square
+        endSize: 0.5, // the width of the nib at the end of the line
+        endAngle: 0, // the angle of the nib at the end of the line
     },
+    // blendmode for the marker
     blend: "normal",
+    // if the dots that make up the line are sprites or not
     useSprites: true,
+    // reduces the number of dots drawn on the line by a certain amount
     fillAreaReducer: 0.5,
+    // if the edges of the line fade out
     fadeEdges: true,
 })
 ```
@@ -56,18 +65,33 @@ const exampleMove = new Move({
     },
     // Adds noise to the line's path
     noise: {
+        // the frequency of the noise, or how often it occurs
         frequency: 0.5,
+        // the amplitude of the noise, or how much it affects the line
         amplitude: 0.5,
+        // optional smoothing of the noise
         smoothing: 1,
     },
     // Controls the pressure of the marker over the course of the line
     pressure: {
+        // pressure at the start of the line
         start: 1,
+        // pressure at the end of the line
         end: 2,
+        // the easing function to use to control the pressure
         easing: "easingName",
+        // an optional map of how the pressure changes over the course of the line
         map: {
             0, 1, 2, 1, 4
         }
+    },
+    // the line to draw
+    line: exampleLine,
+    lines: [
+        // line object, if reverse the line
+        [exampleLine, false],
+        [exampleLine2, false],
+    ]
     }
 })
 
@@ -77,9 +101,13 @@ A `Mark` is created by a `Marker` making a `Move`. The `Marker` follows a `line`
 
 ```javascript
 const exampleMark = new Mark({
+    // name for debugging
     name: "exampleName",
+    // the marker that makes the mark
     marker: exampleMarker,
+    // the move the marker makes
     move: exampleMove,
+    // the layer it is drawn on
     layer: pixiContainer,
 })
 ```

@@ -110,8 +110,6 @@ class Mark {
 
         let bezierPoints
 
-        console.log(move.lines)
-
         if(move.lines !== null) {
             if(move.lines.length > 1) {
                 let allLinePoints = []

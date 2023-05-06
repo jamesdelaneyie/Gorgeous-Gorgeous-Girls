@@ -58,12 +58,12 @@ let Pencil6B2 = new Marker({
     color: '#000000', 
 	material: { size: 1 },
 	nib: { type: "round", size: 1 },
-	alpha: 0.3,
-	//fadeEdges: true,
-	//useSprites: true,
+	alpha: 1,
+	fadeEdges: true,
+	useSprites: true,
     moveStyles: {
-        iterations: 1,
-        density: 100,
+        iterations: 2,
+        density: 300,
 		//jitter: 0.7,
 		/*pressure: {
 			start: 1,

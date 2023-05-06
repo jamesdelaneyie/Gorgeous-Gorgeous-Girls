@@ -16,6 +16,10 @@ canvas {
   padding-bottom: 150px;
 }
 
+input {
+  display: block;
+}
+
 aside {
   position: fixed;
   right: 0;

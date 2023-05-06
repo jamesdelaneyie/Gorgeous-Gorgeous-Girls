@@ -59,6 +59,35 @@ class line {
 		this.density = density;
         this.straighten = straighten
 	}
+
+    debug() {
+        let debug = new Graphics();
+        debug.lineStyle(2, 0x00ff00, 1)
+
+        let cp1Local = this.x + this.cp1;
+        let cp2Local = this.y + this.cp2;
+
+        let newEndX = this.x + this.x2;
+        let newEndY = this.y + this.y2;
+
+        let cp3Local = this.x + this.cp3;
+        let cp4Local = this.y + this.cp4;
+
+        debug.moveTo(this.x, this.y);
+        debug.bezierCurveTo(cp1Local, cp2Local, cp3Local, cp4Local, newEndX, newEndY);
+
+        debug.lineStyle(2, 0x00ff00, 1)
+		debug.drawCircle(this.x, this.y, 4)
+		debug.drawCircle(this.x + this.x2, this.y + this.y2, 4)
+		debug.drawCircle(this.x + this.cp1, this.y + this.cp2, 4)
+		debug.drawCircle(this.x + this.cp3, this.y + this.cp4, 4)
+		debug.moveTo(this.x, this.y)
+		debug.lineTo(this.x + this.cp1, this.y + this.cp2)
+		debug.moveTo(this.x + this.x2, this.y + this.y2)
+		debug.lineTo(this.x + this.cp3, this.y + this.cp4)
+        
+        return debug
+    }
 }
 
 class Move {
@@ -93,21 +122,33 @@ class Mark {
 	}
 
    
-
+    /*
+    * 
+    * Make the mark!
+    * 
+    /*/
     make(app, marker=this.marker, move=this.move, layer=this.layer ) {
         
+
+        // Apply marker properties to move properties if they exist
+
+        // if the marker has a density, use that instead of the move density
         if(marker.density) {
             move.line.density = marker.density;
         }
 
+        //if the marker has move styles defined, use those instead of the move styles
         if(marker.moveStyles != null) {
             for(let style in marker.moveStyles) {
                 move[style] = marker.moveStyles[style];
             }
+            // if one of those is density, use that instead of the move density
             if(marker.moveStyles.density) {
                 move.line.density = marker.moveStyles.density;
             }
         }
+
+
 
         let bezierPoints
 

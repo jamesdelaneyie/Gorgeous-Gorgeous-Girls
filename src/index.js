@@ -106,15 +106,19 @@ PIXI.utils.skipHello();
 let app = new PIXI.Application({
 	width: 1024,
 	height: 1024,
-	antialias: true,
+	antialias: false,
 	//useContextAlpha: false,
 	autoDensity: true,
 	resolution: window.devicePixelRatio || 1,
 	roundPixels: true,
 	autoStart: false,
+	preserveDrawingBuffer: true,
 	powerPreference: "high-performance",
 	backgroundColor: 0x00ff00,
 });
+
+//PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+//PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
 
 // Setup the mark making named function 
 let canvas = app;
@@ -145,6 +149,8 @@ let highlightColor = colors[1]//.highlightColor;
 let multiplyColor = colors[2]//multiplyColor;
 
 console.log(colors)
+
+Pencil6B2.color = multiplyColor
 
 const addColorSwatchesToAside = (colors) => {
 	const colorSwatches = document.createElement("div")
@@ -296,7 +302,7 @@ document.body.appendChild(eyeOffsetYSlider);
 
 
 //create a variable to store the value of the slider
-const updateDrawValues = () => {
+const updateDrawValues = async () => {
 
 	let XValue = XAxisSlider.value
 	let YValue = YAxisSlider.value
@@ -324,6 +330,7 @@ const updateDrawValues = () => {
 	//addReferenceImages()
 
 	app.render()
+	app.stage.filters = [new PIXI.filters.FXAAFilter()];
 
 	const dataUri = app.renderer.plugins.extract.base64(app.stage);
 
@@ -336,7 +343,17 @@ const updateDrawValues = () => {
 		downloadButton.href = dataUri
 	}
 
+
+	const image = new Image()
+	
+	image.src = app.view.toDataURL('image/png');//await app.renderer.plugins.extract.image(canvas.stage);
+	thePreviewImage.remove()
+	document.querySelector("aside").appendChild(image)
+ 	//document.body.appendChild(image);
+
 }
+
+window.pixiapp = app
 
 //add an event listener to the slider that calls the function updateValue when the value changes
 YAxisSlider.addEventListener("input", updateDrawValues, false);
@@ -816,27 +833,28 @@ const drawFaceShape = (positions) => {
 	faceShape.pivot.y = headCentreY
 	faceShape.angle = headTilt
 
+	let skullTopToRightJawLineCP1
+	if(isLeft) {
+		skullTopToRightJawLineCP1 = positions.headWidth + 50 + YAxisEllipseWidth/2
+	} else {
+		skullTopToRightJawLineCP1 = positions.headWidth + 50 - YAxisEllipseWidth/2
+	}
+
 	let skullTopToRightJawLine = new line({
 		x: positions.skullTopPoint.x,
 		y: positions.skullTopPoint.y,
-		cp1: positions.headWidth + 50,
+		cp1: skullTopToRightJawLineCP1,
 		cp2: 0,
 		x2: positions.rightJawStart.x - positions.skullTopPoint.x,
 		y2: positions.rightJawStart.y - positions.skullTopPoint.y,
 	})
+
+
 	if(debug) {
-		let skullTopToRightJawLineDebug = new Graphics()
-		skullTopToRightJawLineDebug.lineStyle(2, 0x00ff00, 1)
-		skullTopToRightJawLineDebug.drawCircle(skullTopToRightJawLine.x, skullTopToRightJawLine.y, 4)
-		skullTopToRightJawLineDebug.drawCircle(skullTopToRightJawLine.x + skullTopToRightJawLine.x2, skullTopToRightJawLine.y + skullTopToRightJawLine.y2, 4)
-		skullTopToRightJawLineDebug.drawCircle(skullTopToRightJawLine.x + skullTopToRightJawLine.cp1, skullTopToRightJawLine.y + skullTopToRightJawLine.cp2, 4)
-		skullTopToRightJawLineDebug.drawCircle(skullTopToRightJawLine.x + skullTopToRightJawLine.cp3, skullTopToRightJawLine.y + skullTopToRightJawLine.cp4, 4)
-		skullTopToRightJawLineDebug.moveTo(skullTopToRightJawLine.x, skullTopToRightJawLine.y)
-		skullTopToRightJawLineDebug.lineTo(skullTopToRightJawLine.x + skullTopToRightJawLine.cp1, skullTopToRightJawLine.y + skullTopToRightJawLine.cp2)
-		skullTopToRightJawLineDebug.moveTo(skullTopToRightJawLine.x + skullTopToRightJawLine.x2, skullTopToRightJawLine.y + skullTopToRightJawLine.y2)
-		skullTopToRightJawLineDebug.lineTo(skullTopToRightJawLine.x + skullTopToRightJawLine.cp3, skullTopToRightJawLine.y + skullTopToRightJawLine.cp4)
-		debugContainer.addChild(skullTopToRightJawLineDebug)
+		let debugLine = skullTopToRightJawLine.debug()
+		debugContainer.addChild(debugLine)
 	}
+
 	let skullTopToRightJaw = new Move({
 		iterations: 1,
 		line: skullTopToRightJawLine
@@ -850,15 +868,25 @@ const drawFaceShape = (positions) => {
 
 
 
+	let skullTopToLeftJawLineCP1
+	if(isLeft) {
+		skullTopToLeftJawLineCP1 = -positions.headWidth - 50 + YAxisEllipseWidth/2
+	} else {
+		skullTopToLeftJawLineCP1 = -positions.headWidth - 50 - YAxisEllipseWidth/2
+	}
 
 	let skullTopToLeftJawLine = new line({
 		x: positions.skullTopPoint.x,
 		y: positions.skullTopPoint.y,
-		cp1: -positions.headWidth - 50,
+		cp1: skullTopToLeftJawLineCP1,
 		cp2: 0,
 		x2: positions.leftJawStart.x - positions.skullTopPoint.x,
 		y2: positions.leftJawStart.y - positions.skullTopPoint.y,
 	})
+	if(debug) {
+		let debugLine = skullTopToLeftJawLine.debug()
+		debugContainer.addChild(debugLine)
+	}
 	let skullTopToLeftJaw = new Move({
 		iterations: 1,
 		line: skullTopToLeftJawLine
@@ -883,7 +911,7 @@ const drawFaceShape = (positions) => {
 			cp2: 150,
 			x2: positions.rightJawBottom.x - positions.rightJawStart.x,
 			y2: positions.rightJawBottom.y - positions.rightJawStart.y, 
-			cp3: positions.rightJawBottom.x - positions.rightJawStart.x + 100,
+			cp3: positions.rightJawBottom.x - positions.rightJawStart.x + 50,
 		})
 	} else {
 		rightJawLine = new line({
@@ -896,6 +924,11 @@ const drawFaceShape = (positions) => {
 			cp3: positions.rightJawBottom.x - positions.rightJawStart.x + 50,
 		})
 	}
+
+	if(debug) {
+		let debugLine = rightJawLine.debug()
+		debugContainer.addChild(debugLine)
+	}
 	
 
 	let leftJawLine
@@ -907,7 +940,7 @@ const drawFaceShape = (positions) => {
 			cp2: 150,
 			x2: positions.leftJawBottom.x - positions.leftJawStart.x,
 			y2: positions.leftJawBottom.y - positions.leftJawStart.y, 
-			cp3: positions.leftJawBottom.x - positions.leftJawStart.x,
+			cp3: positions.leftJawBottom.x - positions.leftJawStart.x - 50,
 		})
 	} else {
 		leftJawLine = new line({
@@ -919,6 +952,11 @@ const drawFaceShape = (positions) => {
 			y2: positions.leftJawBottom.y - positions.leftJawStart.y, 
 			cp3: positions.leftJawBottom.x - positions.leftJawStart.x - 50,
 		})
+	}
+
+	if(debug) {
+		let debugLine = leftJawLine.debug()
+		debugContainer.addChild(debugLine)
 	}
 	
 

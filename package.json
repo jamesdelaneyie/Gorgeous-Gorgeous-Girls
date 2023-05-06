@@ -26,6 +26,7 @@
     "figlet": "^1.5.2",
     "open-simplex-noise": "^2.5.0",
     "pixi-filters": "^4.2.0",
+    "pixi-projection": "^0.4.3",
     "pixi.js": "^6.5.1",
     "simplex-noise": "^4.0.0"
   }

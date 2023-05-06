@@ -89,6 +89,7 @@ class Mark {
 		this.marker = options.marker || new Marker();
 		this.move = options.move || new Move({density: this.marker.density, pressure: {start:this.marker.nib.size, end: this.marker.nib.size, easing: null}});
 		this.layer = options.layer || new Graphics();
+
 	}
 
    
@@ -475,7 +476,7 @@ class Mark {
         } else {
             layer.addChild(lineGraphic);
         }
-        app.stage.addChild(layer);
+        //app.stage.addChild(layer);
     }
 }
 

@@ -54,7 +54,34 @@ let feltMarker = new Marker({
     }
 })
 
-export { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker };
+let Pencil6B2 = new Marker({
+    color: '#000000', 
+	material: { size: 1 },
+	nib: { type: "round", size: 1 },
+	alpha: 0.3,
+	//fadeEdges: true,
+	//useSprites: true,
+    moveStyles: {
+        iterations: 1,
+        density: 100,
+		//jitter: 0.7,
+		/*pressure: {
+			start: 1,
+			end: 1,
+			easing: 'easeOutQuad',
+			map: {
+
+			}
+		},
+		noise: {
+			frequency: 10,
+			magnitude: 2,
+			straighten: 0
+		}*/
+    }
+})
+
+export { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker, Pencil6B2 };
 
 
 /*let ovalMarker = new Marker({

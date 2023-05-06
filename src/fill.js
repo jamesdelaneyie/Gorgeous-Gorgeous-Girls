@@ -137,25 +137,32 @@ class Fill {
         
     }
 
-	fillTexture(canvas) {
+	fillTexture(layer) {
+        
+        //Add the color as a block of color to the back of the layer as a background
+        let container = new PIXI.Container();
 		let background = new Graphics();
         let color = PIXI.utils.string2hex(this.color);
 		background.beginFill(color, 1);
 		background.drawRect(this.x, this.y, this.width, this.height);
 		background.endFill();
 
+        //Create a gradient from the color to white
 		let lighten = chroma
 			.scale([this.color, "#ffffff"])
 			.mode("lch")
 			.colors(10);
+        // Take the 5th color in the gradient and lighten it a bit more
 		var lightenHex = chroma(lighten[5]).hex();
 		var lightenHex = chroma(lightenHex).saturate(-0.5).hex();
 		var lightenPixi = PIXI.utils.string2hex(lightenHex);
         
+        //Create a foreground layer draw on
 		let foreground = new Graphics();
         foreground.x = this.x;
         foreground.y = this.y;
 
+        // Draw a bunch of circles with the lightened color
 		for (var i = 0; i < 100000; i++) {
 			let randomAlpha = randFloat(0, 0.065);
 			foreground.beginFill(lightenPixi, randomAlpha);
@@ -167,6 +174,7 @@ class Fill {
 			foreground.endFill();
 		}
 
+        //Add a bunch of filters to the foreground layer
 		let grain = new OldFilmFilter({
 			sepia: 0.0,
 			noise: 0.06,
@@ -188,6 +196,7 @@ class Fill {
 		foreground.alpha = 1;
 		foreground.filters = [blur, sharpnessMatrix, grain];
         
+        //Create a gradient mask for the foreground layer
         var gradientCanvas = document.createElement('canvas');
         gradientCanvas.width  = this.width;
         gradientCanvas.height = this.height;
@@ -198,18 +207,20 @@ class Fill {
         gradient.addColorStop(.5, 'white');
         gradient.addColorStop(1, 'black');
         
+        // Fill with gradient
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.width, this.height);
         var sprite = new PIXI.Sprite(PIXI.Texture.from(gradientCanvas));
         sprite.x = this.x
         sprite.y = this.y
         this.layer.addChild(sprite)
+        // Apply the mask to the foreground layer
         foreground.mask = sprite;
 
-		this.layer.addChild(background);
-		this.layer.addChild(foreground);
+		container.addChild(background);
+		container.addChild(foreground);
 
-        canvas.stage.addChild(this.layer);
+        return container;
 
 	}
 

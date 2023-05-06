@@ -1,14 +1,16 @@
 let startTime = Date.now();
 //import { projectSettings } from "./settings.js";
 import * as PIXI from "pixi.js";
+import { SmoothGraphics as Graphics } from "@pixi/graphics-smooth";
 import { Mark, Marker, Move, line } from "./draw.js";
 import { Fill } from "./fill.js";
 import { rand, randFloat, findClosestPoints } from "./math.js";
 import { getPositionOnLine } from "./bezier.js";
 import { bezier, getEasing  } from "./easing.js";
 import { getColors } from "./colors.js";
-import { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker } from "./pencil-case.js";
+import { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker, Pencil6B2 } from "./pencil-case.js";
 import { createBezierPoints } from "./bezier.js";
+import { drawEllipse, drawEllipseCurves } from "./shapes.js";
 // the 64 chars hex number fed to your algorithm
 //console.log(fxhash);
 
@@ -95,31 +97,6 @@ if (!localStorage.getItem("projectSettings")) {
 
 
 
-const easingWrapper = document.createElement('div');
-easingWrapper.id = 'easing-wrapper';
-easingWrapper.style = 'position: fixed; bottom: 0; left: 0; width: calc(100% - 300px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
-document.body.appendChild(easingWrapper);
-
-const easingWrapperToggle = document.createElement('div');
-easingWrapperToggle.id = 'easing-wrapper-toggle';
-easingWrapperToggle.style = 'position: fixed; top: 50px; right: 0; height: 40px; ;background-color:blue; width:40px; opacity:1';
-easingWrapperToggle.onclick = function () {
-	easingWrapper.style.opacity = easingWrapper.style.opacity == '1' ? '0' : '1';
-}
-//document.body.appendChild(easingWrapperToggle);
-
-
-const exampleGallery = document.createElement('div');
-exampleGallery.id = 'example-gallery';
-exampleGallery.style = 'position: fixed; top: 200px; right: 0; width: 500px; height: 500px; overflow: scroll;background-color:grey;opacity:1';
-for(let i = 1; i < 14; i++) {
-	let exampleImage = document.createElement('img');
-	exampleImage.src = './inputs/'+i+'.png';
-	exampleImage.style = 'width: 100%; height: 100%; display: block';
-	exampleGallery.append(exampleImage);
-}
-//document.body.appendChild(exampleGallery);
-
 
 
 // Don't print PIXI.js banner
@@ -129,13 +106,14 @@ PIXI.utils.skipHello();
 let app = new PIXI.Application({
 	width: 1024,
 	height: 1024,
-	antialias: true,
+	antialias: false,
+	//useContextAlpha: false,
 	autoDensity: true,
 	resolution: window.devicePixelRatio || 1,
-	roundPixels: false,
+	roundPixels: true,
 	autoStart: false,
 	powerPreference: "high-performance",
-	backgroundColor: 0xffffff,
+	backgroundColor: 0x00ff00,
 });
 
 // Setup the mark making named function 
@@ -151,17 +129,6 @@ let center = {
 
 document.body.appendChild(app.view);
 app.view.id = "canvas";
-
-const addCanvasBackground = (name, position) => {
-	let container = new PIXI.Container();
-	container.name = name;
-	app.stage.addChildAt(container, position)
-	return container
-}
-
-
-const artContainer = addCanvasBackground("art", 0)
-const backgroundContainer = addCanvasBackground("background", 1)
 
 
 	
@@ -230,997 +197,46 @@ const addFillBackground = (color, layer) => {
 
 
 
-let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, reverse=false) {
 
-	let eyeContainer = new PIXI.Container();
-	let eyeBallContainer = new PIXI.Container();
-	
-	
-	let leftEyeX = x
-	let leftEyeY = y
-	
-	let pupilMarker = new Marker({
-		color: multiplyColor,
-		nib: { type: "round", size: pupilSize, sizeJitter: 1 },
-		alpha: 0.25,
-		fillAreaReducer: pupilSize / 5,
-	})
 
-	let pupilX = leftEyeX + pupilDirectionX
-	let pupilDrawX = pupilX + pupilOffsetX
 
-	let pupilY = leftEyeY + pupilDirectionY
-	let pupilDrawY = pupilY + pupilOffsetY
+const artContainer = new PIXI.Container();
+const backgroundContainer = new PIXI.Container();
 
-	let pupilMove = new Move({
-		iterations: 2,
-		jitter: 0.2,
-		line: new line({
-			x: pupilDrawX,
-			y: pupilDrawY,
-			x2: 1,
-			y2: 1,
-		})
-	})
-	
-	let pupilMark = new Mark({
-		name: "Pupil",
-		marker: pupilMarker,
-		move: pupilMove,
-		layer: eyeBallContainer
-	})
-	
-	
-		
-	let irisMarker = new Marker({
-		color: hairColor,
-		material: { size: 1 },
-		nib: { type: "oval", size: irisSize, sizeY: irisSizeY, angle: 0 },
-		alpha: 0.12,
-		fillAreaReducer: irisSize / 5
-	})
-	
-	let irisMove = new Move({
-		iterations: 1,
-		jitter: 0,
-		line: new line({
-			x: pupilX,
-			y: pupilY,
-			x2: 1,
-			y2: 1,
-		})
-	})
-	
-	let irisMark = new Mark({
-		name: "Iris",
-		marker: irisMarker,
-		move: irisMove,
-		layer: eyeBallContainer
-	})
-	
-	
-	let irisBorder1StartWidth = irisBorderWidth
-	let irisBorder1EndWidth = Math.abs(irisBorderWidth / 2)
+let whiteTexture = addFillBackground('#fcfcfc', backgroundContainer)
+let whiteTextureLayer = whiteTexture.fillTexture()
+//canvas.stage.addChild(whiteTextureLayer)
 
-	let irisBorder2StartWidth = irisBorder1EndWidth
-	let irisBorder2EndWidth = irisBorder2StartWidth * 2
+let theCanvas = document.getElementById('canvas')
+let whiteTextureFill = new PIXI.Texture.from(theCanvas)
+//artContainer.addChild(whiteTextureLayer)
 
-	
-	let irisBorder = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "round", size: irisBorder1StartWidth, endSize: irisBorder1EndWidth },
-		alpha: 0.1,
-	})
-	
-	let irisBorderMoveOne = new Move({
-		iterations: 1,
-		jitter: 0.2,
-		pressure: {
-			start: 10,
-		},
-		line: new line({
-			x: pupilX + irisSize + 5,
-			y: pupilY,
-			cp1: 0,
-			cp2: 0,
-			x2: -irisSize,
-			y2: irisSizeY + 2,
-			cp3: 0,
-			cp4: irisSizeY,
-			density: rand(3,6),
-			straighten: 2
-		})
-	})
-	
-	let irisBorderTwo = new Marker({
-		color: multiplyColor,
-		material: { size: 1},
-		nib: { type: "round", size: irisBorder2EndWidth, endSize: irisBorder2StartWidth },
-		alpha: 0.08,
-	})
-	
-	let irisBorderMoveTwo = new Move({
-		pressure: {
-			start: 10,
-		},
-		iterations: 2,
-		jitter: 0.2,
-		reverse: true,
-		line: new line({
-			x: pupilX  + 3,
-			y: pupilY + irisSizeY + 1,
-			cp1: 0,
-			cp2: 0,
-			x2: -irisSize - 8,
-			y2: -irisSizeY,
-			cp3: -irisSize,
-			cp4: 0,
-			density: rand(3,6),
-			straighten: 2
-		})
-	})
-	
-	
-	let irisBorderThree = new Marker({
-		color: multiplyColor,
-		material: { size: 1},
-		nib: { type: "round", size: irisBorder2EndWidth, endSize: irisBorder2EndWidth-1 },
-		alpha: 0.08,
-	})
-	
-	let irisBorderMoveThree = new Move({
-		pressure: {
-			start: 10,
-		},
-		iterations: 2,
-		jitter: 0.1,
-		line: new line({
-			x: pupilX  - irisSize - 3,
-			y: pupilY + 2,
-			cp1: 0,
-			cp2: 0,
-			x2: irisSize,
-			y2: -irisSizeY - 5,
-			cp3: -10,
-			cp4: -irisSize,
-			density: rand(3,4),
-			straighten: 2
-		})
-	})
 
-	let irisBorderFour = new Marker({
-		color: multiplyColor,
-		material: { size: 1},
-		nib: { type: "round", size: irisBorder2EndWidth-1, endSize: irisBorder1StartWidth },
-		alpha: 0.08,
-	})
 
-	let irisBorderMoveFour = new Move({
-		pressure: {
-			start: 10,
-		},
-		iterations: 2,
-		jitter: 0.1,
-		line: new line({
-			x: pupilX  ,
-			y: pupilY - irisSizeY - 3,
-			cp1: 0,
-			cp2: 0,
-			x2: irisSize + 5,
-			y2: irisSizeY + 2,
-			cp3: irisSize,
-			cp4: 0,
-			density: rand(4,5),
-			straighten: 2
-		})
-	})
-	
-	
-	let irisBorderMark = new Mark({
-		name: "Iris Border",
-		marker: irisBorder,
-		move: irisBorderMoveOne,
-		layer: eyeBallContainer
-	})
-	
-	
-	let irisBorderMarkTwo = new Mark({
-		name: "Iris Border 2",
-		marker: irisBorderTwo,
-		move: irisBorderMoveTwo,
-		layer: eyeBallContainer
-	})
-	
-	let irisBorderMarkThree = new Mark({
-		name: "Iris Border 3",
-		marker: irisBorderThree,
-		move: irisBorderMoveThree,
-		layer: eyeBallContainer
-	})
 
-	let irisBorderMarkFour = new Mark({
-		name: "Iris Border 4",
-		marker: irisBorderFour,
-		move: irisBorderMoveFour,
-		layer: eyeBallContainer
-	})
-	
+let backgroundTexture = addFillBackground('#fcfcfc'/*highlightColor*/, backgroundContainer)
+let backgroundLayer = backgroundTexture.fillTexture()
+//canvas.stage.addChild(backgroundLayer)
 
-	const drawPupil = () => {
-		canvas.make(irisMark)
-		canvas.make(irisBorderMark)
-		canvas.make(irisBorderMarkTwo)
-		canvas.make(irisBorderMarkThree)
-		canvas.make(irisBorderMarkFour)
-		canvas.make(pupilMark)
+
+
+
+
+
+const addReferenceImages = () => {
+
+	let referenceImages = new PIXI.Container();
+	let numberOfImages = 2
+	for(var i=1; i<numberOfImages; i++) {
+		let image = PIXI.Sprite.from(`./reference/headshape/${i}.png`);
+		image.alpha = 0.4
+		referenceImages.addChild(image)
 	}
+	artContainer.addChild(referenceImages)
 
-	drawPupil()
-
-
-
-	
-	if(reverse) {
-		let eyeMask = new PIXI.Graphics();
-		eyeMask.beginFill(0x000000);
-		eyeMask.moveTo(leftEyeX - 100, leftEyeY + 50)
-		eyeMask.bezierCurveTo(leftEyeX - 40, leftEyeY - 70, leftEyeX + 110, leftEyeY-35, leftEyeX + 110, leftEyeY-35)
-		eyeMask.bezierCurveTo(leftEyeX + 70, leftEyeY + 55, leftEyeX + 50, leftEyeY + 55, leftEyeX, leftEyeY + 60)
-		eyeMask.endFill();
-		eyeBallContainer.mask = eyeMask;
-		eyeBallContainer.addChild(eyeMask);
-	} else {
-		let eyeMask = new PIXI.Graphics();
-		eyeMask.beginFill(0x000000);
-		eyeMask.moveTo(leftEyeX + 100, leftEyeY + 50)
-		eyeMask.bezierCurveTo(leftEyeX + 40, leftEyeY - 70, leftEyeX-110, leftEyeY-35, leftEyeX-110, leftEyeY-35)
-		eyeMask.bezierCurveTo(leftEyeX - 70, leftEyeY + 55, leftEyeX - 50, leftEyeY + 55, leftEyeX, leftEyeY + 60)
-		eyeMask.endFill();
-		
-		var eyeMaskSprite = new PIXI.Sprite(app.renderer.generateTexture(eyeMask));
-	
-		var eyeMaskSpriteWidth = eyeMaskSprite.width;
-		var eyeMaskSpriteHeight = eyeMaskSprite.height;
-		var blur = new PIXI.filters.BlurFilter(5);
-		eyeMaskSprite.filters = [blur];
-
-
-		eyeMaskSprite.x = leftEyeX - eyeMaskSpriteWidth/2;
-		eyeMaskSprite.y = leftEyeY - eyeMaskSpriteHeight/2;
-		
-		//eyeBallContainer.mask = eyeMaskSprite;
-		eyeBallContainer.mask = eyeMask;
-		eyeBallContainer.addChild(eyeMask)
-		
-		//eyeBallContainer.addChild(eyeMaskSprite);
-		
-		//eyeBallContainer.mask = eyeMaskSprite;
-	}
-	
-	
-	eyeContainer.addChild(eyeBallContainer)
-	
-	
-	
-
-
-	let eyeLidMarker = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "oval", size: 1, endSize: eyeBrowMaxWidth},
-		alpha: 0.12,
-		fadeEdges: true,
-	})
-
-	let eyeLidMove
-
-	if(reverse) {
-		var endEyeLidX = rand(240, 200)
-		var endEyeLidY = rand(-110, -90)
-		eyeLidMove = new Move({
-			iterations: 10,
-			jitter: 0.7,
-			pressure: {
-				start: 10,
-				easing: "ease-in-out",
-				map: {
-		
-				}
-			},
-			noise: {
-				frequency: 0,//randFloat(0.01, 0.03),
-				magnitude: 0,//rand(0, 50),
-				smoothing: 0,
-			},
-			line: new line({
-				x: leftEyeX - 100, 
-				y: leftEyeY + 45,
-				cp1: rand(110, 70),
-				cp2: rand(-150, -130),
-				x2: endEyeLidX,
-				y2: endEyeLidY,
-				cp3: rand(210, 190),
-				cp4: rand(-50, -30),
-			})
-		})
-	} else {
-		var endEyeLidX = rand(-240, -200)
-		var endEyeLidY = rand(-110, -90)
-		eyeLidMove = new Move({
-			iterations: 10,
-			jitter: 0.6,
-			pressure: {
-				start: 10,
-				end: 0,
-				map: {
-		
-				}
-			},
-			noise: {
-				frequency: 0,//randFloat(0.01, 0.03),
-				magnitude: 0,//rand(0, 50),
-				smoothing: 0,
-			},
-			line: new line({
-				x: leftEyeX + 100, 
-				y: leftEyeY + 45,
-				cp1: rand(-110, -70),
-				cp2: rand(-150, -130),
-				x2: endEyeLidX,
-				y2: endEyeLidY,
-				cp3: rand(-210, -190),
-				cp4: rand(-50, -30),
-			})
-		})
-	}
-	
-	
-	
-	
-
-	let eyeLidMark = new Mark({
-		name: "eyeLid",
-		marker: eyeLidMarker,
-		move: eyeLidMove,
-		layer: eyeContainer
-	})
-	
-	canvas.make(eyeLidMark)
-
-
-
-
-
-	
-	let eyeLidBottomMarker = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "round", size: 1},
-		alpha: 0.1,
-	})
-
-	let eyeLidBottomMove
-	if(reverse) {
-	
-		eyeLidBottomMove = new Move({
-			iterations: 1,
-			jitter: 0,
-			line: new line({
-				x: leftEyeX - 95,
-				y: leftEyeY + 55,
-				cp1: 100,
-				cp2: 20,
-				x2: endEyeLidX - 20,
-				y2: endEyeLidY + 50,
-				cp3: 190,
-				cp4: 20
-			})
-		})
-	} else {
-		eyeLidBottomMove = new Move({
-			iterations: 1,
-			jitter: 0,
-			line: new line({
-				x: leftEyeX + 95,
-				y: leftEyeY + 55,
-				cp1: -100,
-				cp2: 20,
-				x2: endEyeLidX + 20,
-				y2: endEyeLidY + 50,
-				cp3: -190,
-				cp4: 20
-			})
-		})
-	}
-	
-	let eyeLidBottomMark = new Mark({
-		marker: eyeLidBottomMarker,
-		move: eyeLidBottomMove,
-		layer: eyeContainer
-	})
-	
-	//canvas.make(eyeLidBottomMark)
-	
-	
-	
-	let eyeLashBottomTwoStart = getPositionOnLine(eyeLidBottomMove.line, 0.5)
-	let eyeLashBottomMoveTwo
-	if(reverse) {
-		eyeLashBottomMoveTwo = new Move({
-			iterations: 1,
-			jitter: 1,
-			alphaJitter: 0.1,
-			line: new line({
-				x: eyeLashBottomTwoStart.x,
-				y: eyeLashBottomTwoStart.y,
-				x2: 80,
-				y2: -80,
-				cp1: 70,
-			})	
-		})
-	} else {
-		eyeLashBottomMoveTwo = new Move({
-			iterations: 1,
-			jitter: 1,
-			alphaJitter: 0.1,
-			line: new line({
-				x: eyeLashBottomTwoStart.x,
-				y: eyeLashBottomTwoStart.y,
-				x2: -80,
-				y2: -80,
-				cp1: -70,
-			})	
-		})
-	}
-	
-	let eyeLidBottomMarkerTwo = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "round", size: 2},
-		alpha: 0.1,
-	})
-	
-	
-	let eyeLashBottomMarkTwo = new Mark({
-		marker: eyeLidBottomMarkerTwo,
-		move: eyeLashBottomMoveTwo,
-		layer: eyeContainer
-	})
-	
-	//canvas.make(eyeLashBottomMarkTwo)
-	
-	
-	let eyeLashMarker = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "round", size: 4, endSize: 2, maxSize: 10},
-		alpha: 0.12,
-	})
-	
-	
-	let eyeLashMarksTop = []
-	if(reverse) { 
-		//Draw Top Eyelashes
-		let eyeLashEasing = getEasing('slight-ease')
-		eyeLashEasing = bezier(eyeLashEasing[0], eyeLashEasing[1], eyeLashEasing[2], eyeLashEasing[3])
-		let eyeLashGap = 0.075
-		let startingPoint = 0.55//randFloatTwo(0.45, 0.65)
-		for(let i = 1; i < 4; i++) {
-			let eyeLashStart = eyeLashGap + startingPoint
-			let eyeLashPositionEase = eyeLashEasing(eyeLashStart)
-			let eyeLashPosition = getPositionOnLine(eyeLidMove.line, eyeLashPositionEase)
-			let eyeLashMove = new Move({
-				iterations: 1,
-				jitter: 0.5,
-				pressure: {
-					start: 5,
-					easing: 'last-out'
-				},
-				line: new line({
-					x: eyeLashPosition.x,
-					y: eyeLashPosition.y,
-					x2: i * 7.5,
-					y2: -20 + (i * -10),
-					cp3: i * 7.5,
-					cp4: 10,
-					density: 30
-				})
-			})
-			let eyeLashMark = new Mark({
-				marker: eyeLashMarker,
-				move: eyeLashMove,
-				layer: eyeContainer
-			})
-			eyeLashMarksTop.push(eyeLashMark)
-			eyeLashGap += (eyeLashGap / i) + 0.02
-		}
-	} else {
-		let eyeLashEasing = getEasing('slight-ease')
-		eyeLashEasing = bezier(eyeLashEasing[0], eyeLashEasing[1], eyeLashEasing[2], eyeLashEasing[3])
-		let eyeLashGap = 0.075
-		let startingPoint = 0.55//randFloatTwo(0.45, 0.65)
-		for(let i = 1; i < 4; i++) {
-			let eyeLashStart = eyeLashGap + startingPoint
-			let eyeLashPositionEase = eyeLashEasing(eyeLashStart)
-			let eyeLashPosition = getPositionOnLine(eyeLidMove.line, eyeLashPositionEase)
-			let eyeLashMove = new Move({
-				iterations: 1,
-				jitter: 0.5,
-				pressure: {
-					start: 5,
-					easing: 'last-out'
-				},
-				line: new line({
-					x: eyeLashPosition.x,
-					y: eyeLashPosition.y,
-					x2: i * -7.5,
-					y2: -20 + (i * -10),
-					cp3: i * -7.5,
-					cp4: -10,
-					density: 30
-				})
-			})
-			let eyeLashMark = new Mark({
-				marker: eyeLashMarker,
-				move: eyeLashMove,
-				layer: eyeContainer
-			})
-			eyeLashMarksTop.push(eyeLashMark)
-			eyeLashGap += (eyeLashGap / i) + 0.02
-		}
-	}
-
-	for(let i = 0; i < eyeLashMarksTop.length; i++) {
-		//canvas.make(eyeLashMarksTop[i])
-	}
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	let eyeLashMarkerBottom = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "round", size: 2, endSize: 1},
-		alpha: 0.12,
-	})
-
-
-	let eyeLashMarks = [] 
-	if(reverse) {
-		let eyeLashEasing = getEasing('slight-ease')
-		eyeLashEasing = bezier(eyeLashEasing[0], eyeLashEasing[1], eyeLashEasing[2], eyeLashEasing[3])
-		let eyeLashGap = 0.075
-		let startingPoint = 0.75//randFloatTwo(0.45, 0.65)
-		for(let i = 1; i < 4; i++) {
-			let eyeLashStart = eyeLashGap + startingPoint
-			let eyeLashPositionEase = eyeLashEasing(eyeLashStart)
-			let eyeLashPosition = getPositionOnLine(eyeLidBottomMove.line, eyeLashPositionEase)
-			let eyeLashMove = new Move({
-				iterations: 1,
-				jitter: 0.5,
-				pressure: {
-					start: 5,
-					easing: 'last-out'
-				},
-				line: new line({
-					x: eyeLashPosition.x,
-					y: eyeLashPosition.y,
-					x2: 10,
-					y2: 10,
-					density: 30
-				})
-			})
-			let eyeLashMark = new Mark({
-				marker: eyeLashMarkerBottom,
-				move: eyeLashMove,
-				layer: eyeContainer
-			})
-			eyeLashMarks.push(eyeLashMark)
-			eyeLashGap += (eyeLashGap / i) + 0.02
-		}
-	} else {
-		let eyeLashEasing = getEasing('slight-ease')
-		eyeLashEasing = bezier(eyeLashEasing[0], eyeLashEasing[1], eyeLashEasing[2], eyeLashEasing[3])
-		let eyeLashGap = 0.075
-		let startingPoint = 0.75//randFloatTwo(0.45, 0.65)
-		for(let i = 1; i < 4; i++) {
-			let eyeLashStart = eyeLashGap + startingPoint
-			let eyeLashPositionEase = eyeLashEasing(eyeLashStart)
-			let eyeLashPosition = getPositionOnLine(eyeLidBottomMove.line, eyeLashPositionEase)
-			let eyeLashMove = new Move({
-				iterations: 1,
-				jitter: 0.5,
-				pressure: {
-					start: 5,
-					easing: 'last-out'
-				},
-				line: new line({
-					x: eyeLashPosition.x,
-					y: eyeLashPosition.y,
-					x2: -10,
-					y2: 10,
-					density: 30
-				})
-			})
-			let eyeLashMark = new Mark({
-				marker: eyeLashMarkerBottom,
-				move: eyeLashMove,
-				layer: eyeContainer
-			})
-			eyeLashMarks.push(eyeLashMark)
-			eyeLashGap += (eyeLashGap / i) + 0.02
-		}
-	}
-
-	for(let i = 0; i < eyeLashMarks.length; i++) {
-		//canvas.make(eyeLashMarks[i])
-	}
-		
-
-
-	
-
-	let eyeLidAboveMarker = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "oval", size: 2, sizeY: 2, endSize: 0, angle: 20},
-		alpha: 0.1,
-	})
-
-
-	let eyeLidFold
-	if(reverse) {
-		eyeLidFold = new Move({
-			iterations: 1,
-			jitter: 1,
-			line: new line({
-				x: eyeLidMove.line.x,
-				y: eyeLidMove.line.y - 50,
-				x2: eyeLidMove.line.x2,
-				y2: 0,
-				cp1: eyeLidMove.line.cp1,
-				cp2: eyeLidMove.line.cp2,
-				cp3: eyeLidMove.line.cp3,
-				cp4: eyeLidMove.line.cp4,
-			})	
-		})
-	} else {
-		eyeLidFold = new Move({
-			iterations: 1,
-			jitter: 1,
-			line: new line({
-				x: eyeLidMove.line.x,
-				y: eyeLidMove.line.y - 50,
-				x2: eyeLidMove.line.x2,
-				y2: 0,
-				cp1: eyeLidMove.line.cp1,
-				cp2: eyeLidMove.line.cp2,
-				cp3: eyeLidMove.line.cp3,
-				cp4: eyeLidMove.line.cp4,
-			})	
-		})
-	}
-
-	let eyeLidFoldMark = new Mark({
-		marker: eyeLidAboveMarker,
-		move: eyeLidFold,
-		layer: eyeContainer
-	})
-	
-
-
-
-	let eyeBrowMarker = new Marker({
-		color: multiplyColor,
-		material: { 
-			size: 1 
-		},
-		nib: { 
-			type: "oval", 
-			size: 3, 
-			sizeY: 5, 
-			endSize: 0,
-			//endSizeY: 10, 
-			angle: 20, 
-			endAngle: 90
-		},
-		alpha: 0.1,
-		fillAreaReducer: 1,
-		useSprites: false
-	})
-
-	let eyeBrowMove = new Move({
-		iterations: 1,
-		jitter: 0.7,
-		noise: {
-			frequency: 0.9,
-			magnitude: 6,
-			smoothing: 0,
-		},
-		line: new line({
-		  x: reverse ? leftEyeX - 100 : leftEyeX + 100,
-		  y: leftEyeY - 100,
-		  x2: reverse ? 200 : -200,
-		  y2: -20,
-		  cp1: reverse ? rand(50, 100) : rand(-50, -100),
-		  cp2: rand(0, -100),
-		  cp3: reverse ? 200 : -200,
-		  cp4: -20,
-		})
-	});
-
-	
-	let eyeBrowMark = new Mark({
-		marker: eyeBrowMarker,
-		move: eyeBrowMove,
-		layer: eyeContainer
-	})
-
-
-	//canvas.make(eyeLidFoldMark)
-	//canvas.make(eyeBrowMark)
-
-
-
-
-	let eyeContainerRotation = randFloat(-0.05, 0.05)
-	eyeContainer.rotation = eyeContainerRotation
-	//set the pivot point to the center of the eye
-	//eyeContainer.pivot = new PIXI.Point(680, 450)
-	
-	artContainer.addChild(eyeContainer)
-	
 }
 
 
-
-
-const createWhiteTexture = (color, layer) => {
-	let whiteTexture = addFillBackground(color, layer)
-	whiteTexture.fillTexture(canvas)
-	let theCanvas = document.getElementById('canvas')
-	let whiteTextureFill = new PIXI.Texture.from(theCanvas)
-	return whiteTextureFill
-}
-
-let whiteTextureFill = createWhiteTexture('#fcfcfc', artContainer)
-
-
-let background = new PIXI.Graphics()
-background.beginTextureFill({texture: whiteTextureFill})
-background.drawRect(0, 0, 1, 1)
-background.endFill()
-artContainer.addChild(background)
-
-let backgroundTexture = addFillBackground(highlightColor, backgroundContainer)
-backgroundTexture.fillTexture(canvas)
-
-
-
-
-/* Drawing Eyes
-
-Need to figure out how to set the eye position based on the position of the head
-Need to position eye coords by working out two arcs, horizontal and vertical, for position of the head
-Then place the eyes on those arcs somewhere
-
-Need to develop a system where the eyes can be rotated left and right, showing more or less of the eye
-Need to add a highlight to the eyes
-Need to add the sketchy variation of the eyes
-Need to find the control points for at least 4 set options for the eyes
-
-*/
-
-let leftEyeX = center.x + rand(-50, 50)
-let rightEyeX = leftEyeX + 350
-let irisSize = rand(30, 50)
-let irisSizeY = rand(irisSize, irisSize+rand(0, 10))
-let pupilSize = rand(5, 10)
-let eyeBrowMaxWidth = rand(10, 20)
-
-let pupilDirectionX = rand(-25, 25)
-let pupilDirectionY = rand(-10, 25)
-let pupilOffsetX
-let pupilOffsetY
-
-if(pupilDirectionY > 0) {
-	pupilOffsetY = rand(0, 10)
-} else {
-	pupilOffsetY = rand(-5, 0)
-}
-
-if(pupilDirectionX > 0) {
-	pupilOffsetX = rand(0,10)
-} else {
-	pupilOffsetX = rand(-10,0)
-}
-
-let irisBorderWidth = rand(3,5)
-
-
-
-
-
-
-
-let drawNose = (noseX, noseY) => {
-
-	let noseContainer = new PIXI.Container()
-
-	var noseX = leftEyeX + 120
-	var noseY = 670
-
-	var noseMarker = new Marker({
-		color: hairColor,
-		material: { size: 0.25,  sizeJitter: 0.25 },
-		nib: { type: "oval", size: rand(1,4), endSize: rand(2,4), angle: 20, endAngle: 90 },
-		alpha: 0.1,
-		fadeEdges: true,
-	})
-
-	let noseHeight = rand(20, 70)
-	var noseFill = new Fill({
-		color: hairColor,
-		width: rand(30,70),
-		height: noseHeight,
-		angle: -5,
-		gap: 10, 
-		marker: noseMarker,
-		x: noseX + 15, 
-		y: 600 - (noseHeight / 1.5),
-		shape: "circle",
-		layer: noseContainer,
-		moveStyles: {
-			iterations: 1,
-			jitter: 2,
-			noise: {
-				frequency: 0.3,
-				magnitude: 2,
-				smoothing: 1,
-			}
-		}
-	})
-
-	noseFill.fillLines(canvas)
-
-
-
-
-	var noseMarker = new Marker({
-		color: hairColor,
-		material: { size: 1 },
-		nib: { type: "oval", size: 4, endSize: 5, angle: 20, endAngle: 90 },
-		alpha: 0.05,
-		fadeEdges: true,
-	})
-
-
-
-
-	var noseMove = new Move({
-		iterations: 1,
-		jitter: 0.5,
-		pressure: {
-			start: 10,
-			easing: 'ease-in-out',
-			end: 2
-		},
-		noise: {
-			frequency: 0.01,//randFloat(0.01, 0.03),
-			magnitude: 1,//rand(0, 50),
-			smoothing: 0,
-		},
-		line: new line({
-			x: noseX+10, 
-			y: noseY+5,
-			cp1: rand(40, 50),
-			cp2: rand(25, 35),
-			x2: rand(50, 70),
-			y2: 0,
-		})
-	})
-
-	var noseMark = new Mark({
-		name: "nose",
-		marker: noseMarker,
-		move: noseMove,
-		layer: noseContainer
-	})
-	
-	canvas.make(noseMark)
-
-
-	var noseMarker = new Marker({
-		color: multiplyColor,
-		material: { size: 1 },
-		nib: { type: "oval", size: 1, endSize: 3},
-		alpha: 0.12,
-		fadeEdges: true,
-	})
-
-	var noseX = leftEyeX + 120
-	var noseY = 670
-
-	var noseMove = new Move({
-		iterations: 5,
-		jitter: 0.5,
-		pressure: {
-			start: 10,
-			easing: 'ease-in-out',
-			end: 2
-		},
-		noise: {
-			frequency: 0.1,//randFloat(0.01, 0.03),
-			magnitude: 2,//rand(0, 50),
-			smoothing: 20,
-		},
-		line: new line({
-			x: noseX, 
-			y: noseY,
-			cp1: 50,
-			cp2: 50,
-			x2: 80,
-			y2: 0,
-			density: 10,
-			straighten: 1
-		})
-	})
-
-	var noseMark = new Mark({
-		name: "nose",
-		marker: noseMarker,
-		move: noseMove,
-		layer: noseContainer
-	})
-	
-	canvas.make(noseMark)
-	//noseContainer.rotation = 1
-	noseContainer.pivot.x = noseX+40
-	noseContainer.pivot.y = noseY
-	noseContainer.angle = -10
-	noseContainer.x = noseX+40
-	noseContainer.y = noseY
-
-
-
-	artContainer.addChild(noseContainer)
-
-	
-	
-}
-
-
-
-
-
-
-
-let ellipseDrawing = function(cx, cy, ds, de, w, h, array, layer, color) {
-	var semicircle = new PIXI.Graphics();
-	semicircle.lineStyle(1, color, 1)
-	for (var i = ds; i < de; i ++) {
-	  var angle = i * ((Math.PI * 2) / 360);
-	  var x = Math.cos(angle) * w;
-	  var y = Math.sin(angle) * h;
-	  semicircle.beginFill(color);
-	  semicircle.arc(cx+x, cy+y, 2, 0, 3);
-	  semicircle.endFill();
-	  array.push({x: cx+x, y: cy+y})
-	}
-	layer.addChild(semicircle)
-}
 
 
 
@@ -1232,81 +248,65 @@ let ellipseDrawing = function(cx, cy, ds, de, w, h, array, layer, color) {
  * 
 /*/
 
-const YAxisMaxAngle = 200//200
+const YAxisMaxAngle = 0//200
 const XAxisMaxAngle = 0//200
 
-let YAxisEllipseWidth = rand(0, YAxisMaxAngle)
+let YAxisEllipseWidth = 80//rand(0, YAxisMaxAngle)
 let XAxisEllipseWidth = rand(0, XAxisMaxAngle)
 
 //Create a range slider input element and add it to the page
 var YAxisSlider = document.createElement("INPUT");
-YAxisSlider.setAttribute("max", "200");
-YAxisSlider.setAttribute("min", "-200");
-YAxisSlider.setAttribute("value", "0");
+YAxisSlider.setAttribute("max", "80");
+YAxisSlider.setAttribute("min", "-80");
+YAxisSlider.setAttribute("value", "-80");
 YAxisSlider.setAttribute("step", "1");
 YAxisSlider.setAttribute("orient", "horizontal");
 YAxisSlider.setAttribute("type", "range");
 document.body.appendChild(YAxisSlider);
 
 var XAxisSlider = document.createElement("INPUT");
-XAxisSlider.setAttribute("max", "200");
-XAxisSlider.setAttribute("min", "-200");
-XAxisSlider.setAttribute("value", "0");
+XAxisSlider.setAttribute("max", "80");
+XAxisSlider.setAttribute("min", "-80");
+XAxisSlider.setAttribute("value", "-80");
 XAxisSlider.setAttribute("step", "1");
 XAxisSlider.setAttribute("orient", "vertical");
 XAxisSlider.setAttribute("type", "range");
 document.body.appendChild(XAxisSlider);
 
+
+
 //create a variable to store the value of the slider
-const updateYValue = (e) => {
-	  //store the value of the slider in the variable
-	  var value = e.target.value;
+const updateDrawValues = () => {
+
+	  let XValue = XAxisSlider.value
+	  let YValue = YAxisSlider.value
+
 	  //use the variable to change the scale of the container
-	  YAxisEllipseWidth = Number(value)
+	  XAxisEllipseWidth = Number(XValue)
+	  YAxisEllipseWidth = Number(YValue)
+
+	  artContainer.removeChildren()
 
 	  let faceDrawPositions = drawHeadSketch()
-	  faceDrawPositions.output.alpha = 0.03
-	
-	  artContainer.removeChildren()
-	  artContainer.addChild(backgroundContainer)
-	  drawFaceShape(faceDrawPositions)
 	  artContainer.addChild(faceDrawPositions.output)
-	  artContainer.parent.addChild(artContainer)
+	  //addReferenceImages()
 
 	  app.render()
 }
 
-const updateXValue = (e) => {
-	//store the value of the slider in the variable
-	var value = e.target.value;
-	//use the variable to change the scale of the container
-	XAxisEllipseWidth = Number(value)
-
-	let faceDrawPositions = drawHeadSketch()
-	faceDrawPositions.output.alpha = 0.03
-
-	artContainer.removeChildren()
-	artContainer.addChild(backgroundContainer)
-	
-	drawFaceShape(faceDrawPositions)
-	artContainer.addChild(faceDrawPositions.output)
-	artContainer.parent.addChild(artContainer)
-
-	app.render()
-}
 //add an event listener to the slider that calls the function updateValue when the value changes
-YAxisSlider.addEventListener("input", updateYValue, false);
-XAxisSlider.addEventListener("input", updateXValue, false);
+YAxisSlider.addEventListener("input", updateDrawValues, false);
+XAxisSlider.addEventListener("input", updateDrawValues, false);
 
 
 const drawHeadSketch = () => {
 
 	const headContainer = new PIXI.Container()
-	const headHeight = 300//rand(300, 350)
-	const headWidth = 300//rand(270, 300)
+	const headHeight = 220//rand(300, 350)
+	const headWidth = 220//rand(270, 300)
 
-	const headCentreX = 500//rand(500, 550)
-	const headCentreY = 500//rand(500, 550)
+	const headCentreX = 510//rand(500, 550)
+	const headCentreY = 400//rand(500, 550)
 
 	const YAxisEllipsePoints = []
 	const XAxisEllipsePoints = []
@@ -1316,10 +316,18 @@ const drawHeadSketch = () => {
 	const centrePointColor = 0x0000ff
 	const faceSketchesColor = 0xff0000
 
+	const isLeft = YAxisEllipseWidth < 0
+
 	// Skull Shape
-	const headSkullShape = new PIXI.Graphics()
+	const headSkullShape = new Graphics()
 	headSkullShape.lineStyle(2, skullColor, 1)
-	headSkullShape.drawEllipse(headCentreX, headCentreY, headWidth, headHeight)
+	let skullCentreX = headCentreX
+	if(isLeft) {
+		skullCentreX = headCentreX - (YAxisEllipseWidth/5)
+	} else {
+		skullCentreX = headCentreX - (YAxisEllipseWidth/5)
+	}
+	headSkullShape.drawEllipse(skullCentreX, headCentreY, headWidth, headHeight)
 	headContainer.addChild(headSkullShape)
 
 	// Get the top point of the skullshape
@@ -1334,13 +342,18 @@ const drawHeadSketch = () => {
 
 	const YOutcome = rand(0, 1);
 	//const isLeft = YOutcome > Y_MIN_OUTCOME;
-	const isLeft = YAxisEllipseWidth < 0
+	
 	YAxisEllipseWidth = Math.abs(YAxisEllipseWidth)
 	const YStartAngle = isLeft ? Y_AXIS_LEFT_START : Y_AXIS_RIGHT_START;
 	const YEndAngle = isLeft ? Y_AXIS_LEFT_END : Y_AXIS_RIGHT_END;
 
-
-	ellipseDrawing(headCentreX, headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
+	if(isLeft) {
+		drawEllipseCurves(headCentreX - (YAxisEllipseWidth/5), headCentreY, YAxisEllipseWidth*2, headHeight*2, headContainer, isLeft)
+		drawEllipse(headCentreX - (YAxisEllipseWidth/5), headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
+	} else {
+		drawEllipseCurves(headCentreX + (YAxisEllipseWidth/5), headCentreY, YAxisEllipseWidth*2, headHeight*2, headContainer, isLeft)
+		drawEllipse(headCentreX + (YAxisEllipseWidth/5), headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
+	}
 
 	//Append the line isLeft to the aside in the DOM
 	const aside = document.querySelector('aside');
@@ -1364,7 +377,13 @@ const drawHeadSketch = () => {
 	const XStartAngle = isDown ? X_AXIS_TOP_START : X_AXIS_BOTTOM_START;
 	const XEndAngle = isDown ? X_AXIS_TOP_END : X_AXIS_BOTTOM_END;
 
-	ellipseDrawing(headCentreX, headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
+	if(isLeft) {
+		drawEllipseCurves(headCentreX + (YAxisEllipseWidth/5), headCentreY, headWidth*2, XAxisEllipseWidth*2, headContainer, isLeft)
+		drawEllipse(headCentreX + (YAxisEllipseWidth/5), headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
+	} else {
+		drawEllipseCurves(headCentreX - (YAxisEllipseWidth/5), headCentreY, headWidth*2, XAxisEllipseWidth*2, headContainer, isLeft)
+		drawEllipse(headCentreX - (YAxisEllipseWidth/5), headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
+	}
 
 	//Append the line isTop to the aside in the DOM
 	const headDirection2 = document.createElement('span');
@@ -1382,7 +401,7 @@ const drawHeadSketch = () => {
 	const faceCentreDistanceY = faceCentreY - headCentreY
 
 	// Draw a circle at the centre of the face
-	const faceCentrePoint = new PIXI.Graphics()
+	const faceCentrePoint = new Graphics()
 	faceCentrePoint.lineStyle(2, centrePointColor, 1)
 	faceCentrePoint.drawCircle(faceCentreX, faceCentreY, 5)
 	headContainer.addChild(faceCentrePoint)
@@ -1391,18 +410,39 @@ const drawHeadSketch = () => {
 	let rightCheekDistance = isLeft ? YAxisEllipseWidth : -YAxisEllipseWidth
 	let leftCheekDistance = isLeft ? (headWidth - YAxisEllipseWidth) : (headWidth + YAxisEllipseWidth)
 
-	const jawHeight = 75//rand(50, 100)
+	const jawHeight = 100//rand(50, 100)
 	const jawBottomYStart = (headCentreY + headHeight + jawHeight)
 	const jawBottomY = isDown ? jawBottomYStart - (faceCentreDistanceY/2) : jawBottomYStart + (faceCentreDistanceY * 1.5)
-	const jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)
 	
-	const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) + rand(-75, 0): headCentreY + headHeight + (faceCentreDistanceY)
+	let jawBottomX
+	if(isLeft) {
+		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) - (YAxisEllipseWidth/4)
+	} else {
+		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) + (YAxisEllipseWidth/4)
+	}
+	//const jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) + (YAxisEllipseWidth/4)
+	
+	const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
 
-	let rightCheek = new PIXI.Graphics()
+	let rightCheek = new Graphics()
 	rightCheek.lineStyle(2, jawColor, 1)
 
-	const rightJawStart = {x: headCentreX + headWidth, y: headCentreY + 50}
-	const rightJawEdge = {x: headCentreX + 200, y: jawEdgeY}
+	let rightJawStartX
+	if(isLeft) {
+		rightJawStartX = headCentreX + headWidth - (YAxisEllipseWidth/5)
+	} else {
+		rightJawStartX = headCentreX + headWidth - (YAxisEllipseWidth/5)
+	}
+	const rightJawStart = {x: rightJawStartX, y: headCentreY + 50}
+
+	let rightJawEdgeX
+	if(isLeft) {
+		rightJawEdgeX = headCentreX + 160 - (YAxisEllipseWidth/3)
+	} else {
+		rightJawEdgeX = headCentreX + 160 
+	}
+
+	const rightJawEdge = {x: rightJawEdgeX, y: jawEdgeY}
 	const rightJawBottom = {x: jawBottomX, y: jawBottomY}
 
 
@@ -1411,11 +451,24 @@ const drawHeadSketch = () => {
 	rightCheek.lineTo(rightJawBottom.x, rightJawBottom.y) // Jaw Bottom
 	headContainer.addChild(rightCheek)
 
-	let leftCheek = new PIXI.Graphics()
+	let leftCheek = new Graphics()
 	leftCheek.lineStyle(2, jawColor, 1)
 
-	const leftJawStart = {x: (headCentreX - rightCheekDistance) - leftCheekDistance, y: headCentreY + 50}
-	const leftJawEdge = {x: (headCentreX - rightCheekDistance) - leftCheekDistance + 100, y: jawEdgeY}
+	let leftJawStartX 
+	if(isLeft) {
+		leftJawStartX = headCentreX - headWidth + (YAxisEllipseWidth/5)
+	} else {
+		leftJawStartX = headCentreX - headWidth + (YAxisEllipseWidth/5)
+	}
+	const leftJawStart = {x: leftJawStartX, y: headCentreY + 50}
+
+	let leftJawEdgeX
+	if(isLeft) {
+		leftJawEdgeX = headCentreX - 160
+	} else {
+		leftJawEdgeX = headCentreX - 160 + (YAxisEllipseWidth/3)
+	}
+	const leftJawEdge = {x: leftJawEdgeX, y: jawEdgeY}
 	const leftJawBottom = {x: jawBottomX, y: jawBottomY}
 
 	leftCheek.moveTo(leftJawStart.x, leftJawStart.y) // Left Jaw Top
@@ -1425,7 +478,7 @@ const drawHeadSketch = () => {
 	headContainer.addChild(leftCheek)
 		
 	// Draw a dotted line from the facecenter to jawbottomX and jawbottomY
-	let dottedLine = new PIXI.Graphics()
+	let dottedLine = new Graphics()
 	dottedLine.lineStyle(2, jawColor, 1)
 	dottedLine.moveTo(faceCentreX, faceCentreY)
 	dottedLine.lineTo(jawBottomX, jawBottomY)
@@ -1441,49 +494,192 @@ const drawHeadSketch = () => {
 	const headTiltAngle = 0// //rand(-15, 15)
 	headContainer.angle = headTiltAngle
 
+	//headContainer.skew.x = 1//rand(-0.1, 0.1)
+
 	const headTilt = document.createElement('span');
 	headTilt.innerHTML = 'Head Tilt: ' + headTiltAngle + '°';
 	aside.appendChild(headTilt);
 
 
-	let leftEyeSketch = new PIXI.Graphics()
+	let leftEyeSketch = new Graphics()
 	leftEyeSketch.lineStyle(2, faceSketchesColor, 1)
-	leftEyeSketch.drawEllipse(faceCentreX - 120, faceCentreY + 50, 70, 50)
-	//headContainer.addChild(leftEyeSketch)
+	if(isLeft) {
+		let leftEyeWidth = 55 - (YAxisEllipseWidth/4)
+		let leftEyeHeight = 35
+		let leftEyeX = faceCentreX - 110 + (YAxisEllipseWidth/1.5)
+		let leftEyeY
+		if(isDown) {
+			leftEyeY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+		} else {
+			leftEyeY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+		}
+		leftEyeSketch.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
+	} else {
+		let leftEyeWidth = 55 * (YAxisEllipseWidth/75)
+		let leftEyeHeight = 35 * (YAxisEllipseWidth/75)
+		let leftEyeX = faceCentreX - 110
+		if(leftEyeWidth < 55) {
+			leftEyeWidth = 55
+		}
+		if(leftEyeHeight < 35) {
+			leftEyeHeight = 35
+		}
+		let leftEyeY
+		if(isDown) {
+			leftEyeY = faceCentreY + 50 - (XAxisEllipseWidth/2)
+		} else {
+			leftEyeY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+		}
+		leftEyeSketch.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
+	}
+	headContainer.addChild(leftEyeSketch)
 
-	let rightEyeSketch = new PIXI.Graphics()
+	let leftPupil = new Graphics()
+	leftPupil.beginFill(0x000000)
+	let leftPupilX 
+	let leftPupilY
+	if(isLeft) {
+		leftPupilX = faceCentreX - 110 + (YAxisEllipseWidth/1.1)
+		if(isDown) {
+			leftPupilY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+		} else {
+			leftPupilY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+		}
+	} else {
+		leftPupilX = faceCentreX - 110
+		if(isDown) {
+			leftPupilY = faceCentreY + 50 - (XAxisEllipseWidth/2)
+		} else {
+			leftPupilY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+		}
+		//leftPupilY = faceCentreY + 50
+	}
+	leftPupil.drawCircle(leftPupilX, leftPupilY, 5)
+	leftPupil.endFill()
+	headContainer.addChild(leftPupil)
+
+
+
+
+
+
+
+
+
+
+
+
+	let rightEyeSketch = new Graphics()
 	rightEyeSketch.lineStyle(2, faceSketchesColor, 1)
-	rightEyeSketch.drawEllipse(faceCentreX + 120, faceCentreY + 50, 70, 50)
-	//headContainer.addChild(rightEyeSketch)
+	if(isLeft) {
+		let rightEyeWidth = 55 * (YAxisEllipseWidth/75)
+		let rightEyeHeight = 35 * (YAxisEllipseWidth/75)
+		let rightEyeX = faceCentreX + 110
+		if(rightEyeWidth < 55) {
+			rightEyeWidth = 55
+		}
+		if(rightEyeHeight < 35) {
+			rightEyeHeight = 35
+		}
+		let rightEyeY
+		if(isDown) {
+			rightEyeY = faceCentreY + 50 - (XAxisEllipseWidth/2)
+		} else {
+			rightEyeY = faceCentreY + 50// + (XAxisEllipseWidth/2)
+		}
+		rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
+	} else {
+		let rightEyeWidth = 55 - (YAxisEllipseWidth/4)
+		let rightEyeHeight = 35
+		let rightEyeX = faceCentreX + 110 - (YAxisEllipseWidth/1.5)
+		let rightEyeY
+		if(isDown) {
+			rightEyeY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+		} else {
+			rightEyeY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+		}
+		rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
+		//rightEyeSketch.drawEllipse(faceCentreX + 110 - (YAxisEllipseWidth/1.5), faceCentreY + 50, (55 - (YAxisEllipseWidth/4)), 35)
+	}
 
-	let noseBottomSketch = new PIXI.Graphics()
+	let rightPupil = new Graphics()
+	rightPupil.beginFill(0x000000)
+	let rightPupilX
+	let rightPupilY
+	if(isLeft) {
+		rightPupilX = faceCentreX + 110
+		if(isDown) {
+			rightPupilY = faceCentreY + 50 - (XAxisEllipseWidth/2)
+		} else {
+			rightPupilY = faceCentreY + 50// + (XAxisEllipseWidth/3)
+		}
+	} else {
+		rightPupilX = faceCentreX + 110 - (YAxisEllipseWidth/1.1)
+		if(isDown) {
+			rightPupilY = faceCentreY + 50 - (XAxisEllipseWidth/2)
+		} else {
+			rightPupilY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+		}
+
+	}
+	rightPupil.drawCircle(rightPupilX, rightPupilY, 5)
+	rightPupil.endFill()
+	headContainer.addChild(rightPupil)
+
+	
+
+	headContainer.addChild(rightEyeSketch)
+
+	let noseBottomSketch = new Graphics()
 	noseBottomSketch.lineStyle(2, faceSketchesColor, 1)
 
-	let noseXStart = faceCentreX - (XAxisEllipseWidth/4)
+
+	let noseCentreX = faceCentreX - 20
+	let noseCentreY = faceCentreY + 180
+	if(isLeft) {
+		noseCentreX = noseCentreX + (YAxisEllipseWidth/5)
+	} else {
+		noseCentreX = noseCentreX - (YAxisEllipseWidth/5)
+	}
+	if(isDown) {
+		noseCentreY = noseCentreY - XAxisEllipseWidth
+	} else {
+		noseCentreY = noseCentreY - (XAxisEllipseWidth/3)
+	}
+	let noseXStart = noseCentreX
 	let noseXEnd = noseXStart + 40
 
-	noseBottomSketch.moveTo(noseXStart, faceCentreY + 180)
-	noseBottomSketch.lineTo(noseXEnd, faceCentreY + 180)
-	//headContainer.addChild(noseBottomSketch)
+	noseBottomSketch.moveTo(noseXStart, noseCentreY)
+	noseBottomSketch.lineTo(noseXEnd, noseCentreY)
+	headContainer.addChild(noseBottomSketch)
 
-	let mouthXStart = faceCentreX + (XAxisEllipseWidth/2)
+
+
+
+	let mouthXStart = faceCentreX - 50
+	let mouthYStart = faceCentreY + 170 + (jawHeight/2)
+	if(isLeft) {
+		mouthXStart = mouthXStart + (YAxisEllipseWidth/3)
+	} else {
+		mouthXStart = mouthXStart - (YAxisEllipseWidth/3)
+	}
+	if(isDown) {
+		mouthYStart = mouthYStart - (XAxisEllipseWidth/1)
+	} else {
+		mouthYStart = mouthYStart - (XAxisEllipseWidth/2.5)
+	}
+
 	let mouthXEnd = mouthXStart + 100
 
-	let mouthSketch = new PIXI.Graphics()
+	let mouthSketch = new Graphics()
 	mouthSketch.lineStyle(2, faceSketchesColor, 1)
-	mouthSketch.moveTo(mouthXStart, faceCentreY + 220 + (jawHeight/2))
-	mouthSketch.lineTo(mouthXEnd, faceCentreY + 220 + (jawHeight/2))
-	//headContainer.addChild(mouthSketch)
-
-	let hairLineSketch = new PIXI.Graphics()
-	hairLineSketch.lineStyle(2, faceSketchesColor, 1)
-	hairLineSketch.moveTo(faceCentreX - (XAxisEllipseWidth/2), faceCentreY - 180)
-	hairLineSketch.lineTo(faceCentreX + (XAxisEllipseWidth/2), faceCentreY - 180)
-	//headContainer.addChild(hairLineSketch)
+	mouthSketch.moveTo(mouthXStart, mouthYStart)
+	mouthSketch.lineTo(mouthXEnd, mouthYStart)
+	headContainer.addChild(mouthSketch)
 
 
-	//artContainer.addChild(headContainer)
-	headContainer.alpha = 0.5
+	artContainer.addChild(headContainer)
+	headContainer.alpha = 0.2
 
 	return {
 		headWidth: headWidth,
@@ -1500,39 +696,17 @@ const drawHeadSketch = () => {
 
 }
 
-let faceDrawPositions = drawHeadSketch()
 
 
 
-let Pencil6B2 = new Marker({
-    color: multiplyColor, 
-	material: { size: 0.5},
-	nib: { type: "round", size: 3, endSize: 4 },
-	alpha: 0.3,
-	fadeEdges: true,
-	useSprites: true,
-    moveStyles: {
-        iterations: 1,
-        density: 200,
-		//jitter: 0.7,
-		pressure: {
-			start: 1,
-			end: 1,
-			easing: 'easeOutQuad',
-			map: {
 
-			}
-		},
-		noise: {
-			frequency: 10,
-			magnitude: 2,
-			straighten: 0
-		}
-    }
-})
+
 
 
 const drawFaceShape = (positions) => {
+
+	let faceShape = new PIXI.Container()
+
 	let skullTopToRightJawLine = new line({
 		x: positions.skullTopPoint.x,
 		y: positions.skullTopPoint.y,
@@ -1549,7 +723,7 @@ const drawFaceShape = (positions) => {
 		name: "skullTopToRightJaw",
 		marker: Pencil6B2,
 		move: skullTopToRightJaw,
-		layer: artContainer
+		layer: faceShape
 	})
 
 
@@ -1571,7 +745,7 @@ const drawFaceShape = (positions) => {
 		name: "skullTopToLeftJaw",
 		marker: Pencil6B2,
 		move: skullTopToLeftJaw,
-		layer: artContainer
+		layer: faceShape
 	})
 
 
@@ -1609,7 +783,7 @@ const drawFaceShape = (positions) => {
 		name: "rightJaw",
 		marker: Pencil6B2,
 		move: rightJawDrawLine,
-		layer: artContainer
+		layer: faceShape
 	})
 
 
@@ -1625,7 +799,7 @@ const drawFaceShape = (positions) => {
 		name: "leftJaw",
 		marker: Pencil6B2,
 		move: leftJawDrawLine,
-		layer: artContainer
+		layer: faceShape
 	})
 
 
@@ -1650,7 +824,7 @@ const drawFaceShape = (positions) => {
 		name: "rightNeck",
 		marker: Pencil6B2,
 		move: rightNeckDrawLine,
-		layer: artContainer
+		layer: faceShape
 	})
 
 	let leftNextLine = new line({
@@ -1673,19 +847,21 @@ const drawFaceShape = (positions) => {
 		name: "leftNeck",
 		marker: Pencil6B2,
 		move: leftNeckDrawLine,
-		layer: artContainer
+		layer: faceShape
 	})
 
 
 	let rightNeckDrawLinePoints = createBezierPoints(rightNeckLine)
 	let leftNeckDrawLinePoints = createBezierPoints(leftNextLine)
 	let neckShapePoints = rightNeckDrawLinePoints.concat(leftNeckDrawLinePoints.reverse())
+
 	let neckShape = new PIXI.Graphics()
-	neckShape.beginTextureFill({texture: whiteTextureFill})
+	//neckShape.beginTextureFill({texture: whiteTextureSpriteLayer})
+	neckShape.beginFill(0xffffff)
 	neckShape.lineStyle(6, 0xffffff, 1)
 	neckShape.drawPolygon(neckShapePoints)
 	neckShape.endFill()
-	artContainer.addChild(neckShape)
+	faceShape.addChild(neckShape)
 
 
 
@@ -1697,69 +873,38 @@ const drawFaceShape = (positions) => {
 	let headShapePoints = skullTopToRightJawLinePoints.concat(skullTopToLeftJawLinePoints.reverse()).concat(leftJawLinePoints.reverse()).concat(rightJawLinePoints)
 
 	let headShape = new PIXI.Graphics()
-	headShape.beginTextureFill({texture: whiteTextureFill})
+	//headShape.beginTextureFill({texture: whiteTextureSpriteLayer})
+	headShape.beginFill(0xffffff)
 	headShape.lineStyle(0, 0xffffff, 1)
 	headShape.drawPolygon(headShapePoints)
 	headShape.endFill()
 
 	canvas.make(rightNeckMark)
 	canvas.make(leftNeckMark)
-	headShape.alpha = 1
 
 	canvas.make(skullTopToRightJawMark)
 	canvas.make(skullTopToLeftJawMark)
 	canvas.make(rightJawMark)
 	canvas.make(leftJawMark)
 
-	artContainer.addChild(headShape)
+	faceShape.addChild(headShape)
+
+	return faceShape;
 
 }
 
 
 
-console.log(canvas.stage)
-backgroundTexture.fillTexture(canvas)
-drawFaceShape(faceDrawPositions)
-artContainer.addChild(backgroundContainer)
-artContainer.addChild(faceDrawPositions.output)
-artContainer.parent.addChild(artContainer)
+updateDrawValues()
 
 
+canvas.stage.addChild(artContainer)
 
-//drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
-//drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
+setTimeout(() => {
+	updateDrawValues()
+}, 100)
 
 
-/*
-var noseMove = new Move({
-	iterations: 1,
-	jitter: 0.5,
-	pressure: {
-		start: 10,
-		easing: 'ease-in-out',
-		end: 2
-	},
-	noise: {
-		frequency: 0.01,//randFloat(0.01, 0.03),
-		magnitude: 1,//rand(0, 50),
-		smoothing: 0,
-	},
-	line: new line({
-		x: noseX+10, 
-		y: noseY+5,
-		cp1: rand(40, 50),
-		cp2: rand(25, 35),
-		x2: rand(50, 70),
-		y2: 0,
-	})
-})
-
-var noseMark = new Mark({
-	name: "nose",
-	marker: noseMarker,
-	move: noseMove,
-	layer: noseContainer
-})*/
 
 
 

@@ -202,25 +202,37 @@ const addFillBackground = (color, layer) => {
 
 
 
-
+let debug = true
+let drawWireframe = true
 
 
 
 const artContainer = new PIXI.Container();
 const backgroundContainer = new PIXI.Container();
 
-let whiteTexture = addFillBackground('#fcfcfc', backgroundContainer)
-let whiteTextureLayer = whiteTexture.fillTexture()
-canvas.stage.addChild(whiteTextureLayer)
-let whiteTextureFill = new PIXI.Texture.from(app.view)
-let whiteTextureTest = new PIXI.Sprite(whiteTextureFill)
-canvas.stage.addChild(whiteTextureTest)
+
+if(drawWireframe) {
+	let whiteTexture = addFillBackground('#fcfcfc', backgroundContainer)
+	let whiteTextureLayer = whiteTexture.fillTexture()
+	canvas.stage.addChild(whiteTextureLayer)
+	let whiteTextureFill = new PIXI.Texture.from(app.view)
+	let whiteTextureTest = new PIXI.Sprite(whiteTextureFill)
+	canvas.stage.addChild(whiteTextureTest)
+}
 
 
+if(drawWireframe) {
+	let backgroundColor = new PIXI.Graphics();
+	backgroundColor.beginFill(PIXI.utils.string2hex(highlightColor));
+	backgroundColor.drawRect(0, 0, app.view.width, app.view.height);
+	backgroundColor.endFill();
+	canvas.stage.addChild(backgroundColor)
+} else {
+	let backgroundTexture = addFillBackground(highlightColor, backgroundContainer)
+	let backgroundLayer = backgroundTexture.fillTexture()
+	canvas.stage.addChild(backgroundLayer)
+}
 
-let backgroundTexture = addFillBackground(highlightColor, backgroundContainer)
-let backgroundLayer = backgroundTexture.fillTexture()
-canvas.stage.addChild(backgroundLayer)
 
 
 
@@ -372,8 +384,7 @@ const headWidth = 440//220//rand(270, 300)
 
 
 let isLeft = YAxisEllipseWidth < 0
-let debug = false
-let drawWireframe = false
+
 
 const drawHeadSketch = () => {
 
@@ -489,8 +500,15 @@ const drawHeadSketch = () => {
 	let jawBottomX
 	if(isLeft) {
 		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) - (YAxisEllipseWidth/4)
+		if(isDown) {
+			jawBottomX = jawBottomX + (XAxisEllipseWidth/4)
+		}
 	} else {
 		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) + (YAxisEllipseWidth/4)
+		if(isDown) {
+			jawBottomX = jawBottomX - (XAxisEllipseWidth/4)
+		}
+		
 	}
 	
 	const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
@@ -600,7 +618,7 @@ const drawHeadSketch = () => {
 		let leftEyeX = faceCentreX - 210 + (YAxisEllipseWidth/1.5)
 		let leftEyeY
 		if(isDown) {
-			leftEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)
+			leftEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) 
 		} else {
 			leftEyeY = faceCentreY + 100// + (XAxisEllipseWidth/3)
 		}
@@ -639,14 +657,24 @@ const drawHeadSketch = () => {
 	let leftEyeBrowYEnd
 	if(isLeft) {
 		leftEyeBrowXStart = faceCentreX - 100 + (YAxisEllipseWidth/2)
-		leftEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
 		leftEyeBrowXEnd = faceCentreX - 320 + (YAxisEllipseWidth/2)
-		leftEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
+		if(isDown) {
+			leftEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/2)
+			leftEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/2)
+		} else {
+			leftEyeBrowYStart = faceCentreY - 60 + (XAxisEllipseWidth/6)
+			leftEyeBrowYEnd = faceCentreY - 60 + (XAxisEllipseWidth/6)
+		}
 	} else {
 		leftEyeBrowXStart = faceCentreX - 100 + (YAxisEllipseWidth/3)
-		leftEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
 		leftEyeBrowXEnd = faceCentreX - 320 - (YAxisEllipseWidth/1)
-		leftEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
+		if(isDown) {
+			leftEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/2)
+			leftEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/2)
+		} else {
+			leftEyeBrowYStart = faceCentreY - 60 + (XAxisEllipseWidth/6)
+			leftEyeBrowYEnd = faceCentreY - 60 + (XAxisEllipseWidth/6)
+		}
 	}
 	leftEyeBrow.moveTo(leftEyeBrowXStart, leftEyeBrowYStart)
 	leftEyeBrow.lineTo(leftEyeBrowXEnd, leftEyeBrowYEnd)
@@ -655,20 +683,20 @@ const drawHeadSketch = () => {
 
 
 	let leftPupil = new Graphics()
-	leftPupil.beginFill(multiplyColor)
+	
 	let leftPupilX 
 	let leftPupilY
 	if(isLeft) {
-		leftPupilX = faceCentreX - 220 + (YAxisEllipseWidth/1.1)
+		leftPupilX = faceCentreX - 210 + (YAxisEllipseWidth/1.2)
 		if(isDown) {
 			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
 		} else {
 			leftPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
 		}
 	} else {
-		leftPupilX = faceCentreX - 220 - (YAxisEllipseWidth/3)
+		leftPupilX = faceCentreX - 210 - (YAxisEllipseWidth/3)
 		if(isDown) {
-			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
+			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
 			leftPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
 		}
@@ -676,8 +704,7 @@ const drawHeadSketch = () => {
 	}
 	leftPupilX = leftPupilX + eyePupilOffsetX
 	leftPupilY = leftPupilY + eyePupilOffsetY
-	leftPupil.drawCircle(leftPupilX, leftPupilY, 10)
-	leftPupil.endFill()
+	
 
 	let leftIrisMove = new Move({
 		iterations: 4,
@@ -697,7 +724,17 @@ const drawHeadSketch = () => {
 		layer: featureContainer
 	})
 
-	canvas.make(leftIrisMark)
+	if(drawWireframe) {
+		leftPupil.beginFill(PIXI.utils.string2hex(hairColor))
+		leftPupil.drawEllipse(leftPupilX, leftPupilY, irisSize, irisSizeY)
+		leftPupil.endFill()
+	} else {
+		canvas.make(leftIrisMark)
+	}
+	leftPupil.beginFill(multiplyColor)
+	leftPupil.drawCircle(leftPupilX, leftPupilY, 10)
+	leftPupil.endFill()
+	
 
 	featureContainer.addChild(leftPupil)
 
@@ -752,7 +789,7 @@ const drawHeadSketch = () => {
 	} else {
 		let rightEyeWidth = 110 - (YAxisEllipseWidth/4)
 		let rightEyeHeight = 70
-		let rightEyeX = faceCentreX + 220 - (YAxisEllipseWidth/1.5)
+		let rightEyeX = faceCentreX + 210 - (YAxisEllipseWidth/1.5)
 		let rightEyeY
 		if(isDown) {
 			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
@@ -773,11 +810,25 @@ const drawHeadSketch = () => {
 		rightEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
 		rightEyeBrowXEnd = faceCentreX + 320 + (YAxisEllipseWidth/2)
 		rightEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
+		if(isDown) {
+			rightEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/2)
+			rightEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/2)
+		} else {
+			rightEyeBrowYStart = faceCentreY - 60 + (XAxisEllipseWidth/6)
+			rightEyeBrowYEnd = faceCentreY - 60 + (XAxisEllipseWidth/6)
+		}
+		
 	} else {
 		rightEyeBrowXStart = faceCentreX + 100 - (YAxisEllipseWidth/2)
-		rightEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
 		rightEyeBrowXEnd = faceCentreX + 320 - (YAxisEllipseWidth/1.1)
-		rightEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/1.5)
+		if(isDown) {
+			rightEyeBrowYStart = faceCentreY - 60 - (XAxisEllipseWidth/2)
+			rightEyeBrowYEnd = faceCentreY - 60 - (XAxisEllipseWidth/2)
+		} else {
+			rightEyeBrowYStart = faceCentreY - 60 + (XAxisEllipseWidth/6)
+			rightEyeBrowYEnd = faceCentreY - 60 + (XAxisEllipseWidth/6)
+		}
+		
 	}
 	rightEyeBrow.moveTo(rightEyeBrowXStart, rightEyeBrowYStart)
 	rightEyeBrow.lineTo(rightEyeBrowXEnd, rightEyeBrowYEnd)
@@ -792,14 +843,15 @@ const drawHeadSketch = () => {
 	let rightPupilX
 	let rightPupilY
 	if(isLeft) {
-		rightPupilX = faceCentreX + 220 + (YAxisEllipseWidth/2.2)
+		rightPupilX = faceCentreX + 210 + (YAxisEllipseWidth/2)
 		if(isDown) {
 			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
 		} else {
 			rightPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
 		}
 	} else {
-		rightPupilX = faceCentreX + 220 - (YAxisEllipseWidth/1.1)
+		rightPupilX = faceCentreX + 210 - (YAxisEllipseWidth/1.2)
+		
 		if(isDown) {
 			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
@@ -809,9 +861,8 @@ const drawHeadSketch = () => {
 	}
 	rightPupilX = rightPupilX + eyePupilOffsetX
 	rightPupilY = rightPupilY + eyePupilOffsetY
-	rightPupil.drawCircle(rightPupilX, rightPupilY, 10)
-	rightPupil.endFill()
-
+	
+	featureContainer.addChild(rightEyeSketch)
 
 
 	
@@ -834,13 +885,24 @@ const drawHeadSketch = () => {
 		layer: featureContainer
 	})
 
-	canvas.make(irisMark)
+	
+	if(drawWireframe) {
+		rightPupil.beginFill(PIXI.utils.string2hex(hairColor))
+		rightPupil.drawEllipse(rightPupilX, rightPupilY, irisSize, irisSizeY)
+		rightPupil.endFill()
+	} else {
+		canvas.make(irisMark)
+	}
+
+	rightPupil.beginFill(multiplyColor)
+	rightPupil.drawCircle(rightPupilX, rightPupilY, 10)
+	rightPupil.endFill()
 
 	featureContainer.addChild(rightPupil)
 
 	
 
-	featureContainer.addChild(rightEyeSketch)
+	
 
 	let noseBottomSketch = new Graphics()
 	noseBottomSketch.lineStyle(2, faceSketchesColor, 1)
@@ -1159,7 +1221,12 @@ const drawFaceShape = (positions) => {
 	let headShapePoints = skullTopToRightJawLinePoints.concat(rightJawLinePoints).concat(leftJawLinePoints.reverse()).concat(skullTopToLeftJawLinePoints.reverse())
 
 	let headShape = new PIXI.Graphics()
-	headShape.beginTextureFill({texture: whiteTextureFill})
+	if(drawWireframe) {
+		headShape.beginFill(0xffffff)
+	} else {
+		headShape.beginTextureFill({texture: whiteTextureFill})
+	}
+	
 	headShape.lineStyle(20, 0xffffff, 1)
 	headShape.drawPolygon(headShapePoints)
 	headShape.endFill()
@@ -1171,10 +1238,13 @@ const drawFaceShape = (positions) => {
 
 
 	
+	if(drawWireframe) {
+	} else {
+		canvas.make(skullTopToRightJawMark)
+		canvas.make(skullTopToLeftJawMark)
+		canvas.make(rightJawMark)
+	}
 
-	canvas.make(skullTopToRightJawMark)
-	canvas.make(skullTopToLeftJawMark)
-	canvas.make(rightJawMark)
 	//canvas.make(leftJawMark)
 
 	faceShape.addChild(debugContainer)

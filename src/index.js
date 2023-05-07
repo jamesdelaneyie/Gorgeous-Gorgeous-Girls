@@ -252,18 +252,18 @@ const addReferenceImages = () => {
  * 
 /*/
 
-const YAxisMaxAngle = 0//200
-const XAxisMaxAngle = 0//200
+const YAxisMaxAngle = 80//200
+const XAxisMaxAngle = 80//200
 
-let YAxisEllipseWidth = 80//rand(0, YAxisMaxAngle)
-let XAxisEllipseWidth = rand(0, XAxisMaxAngle)
+let YAxisEllipseWidth = rand(-YAxisMaxAngle, YAxisMaxAngle)
+let XAxisEllipseWidth = rand(-XAxisMaxAngle, XAxisMaxAngle)
 let headTilt = 0
 
 //Create a range slider input element and add it to the page
 var YAxisSlider = document.createElement("INPUT");
 YAxisSlider.setAttribute("max", "80");
 YAxisSlider.setAttribute("min", "-80");
-YAxisSlider.setAttribute("value", "0");
+YAxisSlider.setAttribute("value", YAxisEllipseWidth);
 YAxisSlider.setAttribute("step", "1");
 YAxisSlider.setAttribute("type", "range");
 document.body.appendChild(YAxisSlider);
@@ -271,7 +271,7 @@ document.body.appendChild(YAxisSlider);
 var XAxisSlider = document.createElement("INPUT");
 XAxisSlider.setAttribute("max", "80");
 XAxisSlider.setAttribute("min", "-80");
-XAxisSlider.setAttribute("value", "0");
+XAxisSlider.setAttribute("value", XAxisEllipseWidth);
 XAxisSlider.setAttribute("step", "1");
 XAxisSlider.setAttribute("type", "range");
 document.body.appendChild(XAxisSlider);
@@ -325,7 +325,9 @@ const updateDrawValues = async () => {
 	let faceShape = drawFaceShape(faceDrawPositions)
 	artContainer.addChild(faceShape)
 	artContainer.addChild(faceDrawPositions.features)
-	artContainer.addChild(faceDrawPositions.output)
+	if(drawWireframe) {
+		artContainer.addChild(faceDrawPositions.output)
+	}
 
 	//addReferenceImages()
 
@@ -353,7 +355,6 @@ const updateDrawValues = async () => {
 
 }
 
-window.pixiapp = app
 
 //add an event listener to the slider that calls the function updateValue when the value changes
 YAxisSlider.addEventListener("input", updateDrawValues, false);
@@ -364,18 +365,19 @@ eyeOffsetYSlider.addEventListener("input", updateDrawValues, false);
 
 const headCentreX = 510//rand(500, 550)
 const headCentreY = 400//rand(500, 550)
+const jawHeight = rand(90, 110)
+
 let isLeft = YAxisEllipseWidth < 0
 let eyePupilOffsetX = 0
 let eyePupilOffsetY = 0
-let debug = true
+let debug = false
+let drawWireframe = false
 
 const drawHeadSketch = () => {
 
 	const headContainer = new PIXI.Container()
 	const headHeight = 220//rand(300, 350)
 	const headWidth = 220//rand(270, 300)
-
-
 
 	const YAxisEllipsePoints = []
 	const XAxisEllipsePoints = []
@@ -480,7 +482,7 @@ const drawHeadSketch = () => {
 	let rightCheekDistance = isLeft ? YAxisEllipseWidth : -YAxisEllipseWidth
 	let leftCheekDistance = isLeft ? (headWidth - YAxisEllipseWidth) : (headWidth + YAxisEllipseWidth)
 
-	const jawHeight = 100//rand(50, 100)
+	
 	const jawBottomYStart = (headCentreY + headHeight + jawHeight)
 	const jawBottomY = isDown ? jawBottomYStart - (faceCentreDistanceY/2) : jawBottomYStart + (faceCentreDistanceY * 1.5)
 	
@@ -579,9 +581,9 @@ const drawHeadSketch = () => {
 		let leftEyeX = faceCentreX - 110 + (YAxisEllipseWidth/1.5)
 		let leftEyeY
 		if(isDown) {
-			leftEyeY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+			leftEyeY = faceCentreY + 50 - (XAxisEllipseWidth/2)
 		} else {
-			leftEyeY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+			leftEyeY = faceCentreY + 50// + (XAxisEllipseWidth/3)
 		}
 		leftEyeSketch.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
 	} else {
@@ -634,9 +636,9 @@ const drawHeadSketch = () => {
 	if(isLeft) {
 		leftPupilX = faceCentreX - 110 + (YAxisEllipseWidth/1.1)
 		if(isDown) {
-			leftPupilY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+			leftPupilY = faceCentreY + 50 - (XAxisEllipseWidth/2)
 		} else {
-			leftPupilY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+			leftPupilY = faceCentreY + 50// + (XAxisEllipseWidth/3)
 		}
 	} else {
 		leftPupilX = faceCentreX - 110 - (YAxisEllipseWidth/3)
@@ -689,9 +691,9 @@ const drawHeadSketch = () => {
 		let rightEyeX = faceCentreX + 110 - (YAxisEllipseWidth/1.5)
 		let rightEyeY
 		if(isDown) {
-			rightEyeY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+			rightEyeY = faceCentreY + 50 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
-			rightEyeY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+			rightEyeY = faceCentreY + 50// + (XAxisEllipseWidth/2)
 		}
 		rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
 	}
@@ -731,9 +733,9 @@ const drawHeadSketch = () => {
 	} else {
 		rightPupilX = faceCentreX + 110 - (YAxisEllipseWidth/1.1)
 		if(isDown) {
-			rightPupilY = faceCentreY + 50 - (XAxisEllipseWidth/1.5)
+			rightPupilY = faceCentreY + 50 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
-			rightPupilY = faceCentreY + 50 + (XAxisEllipseWidth/3)
+			rightPupilY = faceCentreY + 50// + (XAxisEllipseWidth/3)
 		}
 
 	}
@@ -1063,7 +1065,7 @@ const drawFaceShape = (positions) => {
 	let headShape = new PIXI.Graphics()
 	headShape.beginTextureFill({texture: whiteTextureFill})
 	//headShape.beginFill(0xffffff, 1)
-	headShape.lineStyle(0, 0xffffff, 1)
+	headShape.lineStyle(20, 0xffffff, 1)
 	headShape.drawPolygon(headShapePoints)
 	headShape.endFill()
 
@@ -1078,7 +1080,7 @@ const drawFaceShape = (positions) => {
 	canvas.make(skullTopToRightJawMark)
 	canvas.make(skullTopToLeftJawMark)
 	canvas.make(rightJawMark)
-	canvas.make(leftJawMark)
+	//canvas.make(leftJawMark)
 
 	faceShape.addChild(debugContainer)
 

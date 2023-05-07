@@ -208,8 +208,7 @@ surface.proj.setAxisY(new PIXI.Point(20, -100));
 container2D.addChild(surface);*/
 
 
-//drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
-//drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
+
 
 let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, reverse=false) {
 
@@ -621,7 +620,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 		layer: eyeContainer
 	})
 	
-	//canvas.make(eyeLidBottomMark)
+	canvas.make(eyeLidBottomMark)
 	
 	
 	
@@ -669,7 +668,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 		layer: eyeContainer
 	})
 	
-	//canvas.make(eyeLashBottomMarkTwo)
+	canvas.make(eyeLashBottomMarkTwo)
 	
 	
 	let eyeLashMarker = new Marker({
@@ -753,7 +752,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	}
 
 	for(let i = 0; i < eyeLashMarksTop.length; i++) {
-		//canvas.make(eyeLashMarksTop[i])
+		canvas.make(eyeLashMarksTop[i])
 	}
 	
 
@@ -846,7 +845,7 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	}
 
 	for(let i = 0; i < eyeLashMarks.length; i++) {
-		//canvas.make(eyeLashMarks[i])
+		canvas.make(eyeLashMarks[i])
 	}
 		
 
@@ -950,8 +949,8 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	})
 
 
-	//canvas.make(eyeLidFoldMark)
-	//canvas.make(eyeBrowMark)
+	canvas.make(eyeLidFoldMark)
+	canvas.make(eyeBrowMark)
 
 
 
@@ -964,6 +963,9 @@ let drawEye = function(x, y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, re
 	artContainer.addChild(eyeContainer)
 	
 }
+
+drawEye(leftEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth)
+drawEye(rightEyeX, center.y, irisSize, irisSizeY, pupilSize, eyeBrowMaxWidth, true)
 /*
 var noseMove = new Move({
 	iterations: 1,

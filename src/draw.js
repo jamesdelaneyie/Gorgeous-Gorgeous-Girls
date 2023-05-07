@@ -128,10 +128,18 @@ class Mark {
     * 
     /*/
     make(app, marker=this.marker, move=this.move, layer=this.layer ) {
+
+        // Container to hold the PIXI.Graphics objects
+        let lineGraphic = new PIXI.Container(); 
+
+        // Container to hold the PIXI.Sprite objects
+        let spriteContainer = new PIXI.ParticleContainer(500000);
+
+        // Convert the marker color to a hex value
+        let color = PIXI.utils.string2hex(marker.color);
         
 
         // Apply marker properties to move properties if they exist
-
         // if the marker has a density, use that instead of the move density
         if(marker.density) {
             move.line.density = marker.density;
@@ -146,16 +154,26 @@ class Mark {
             if(marker.moveStyles.density) {
                 move.line.density = marker.moveStyles.density;
             }
+            if(marker.moveStyles.straighten) {
+                move.line.straighten = marker.moveStyles.straighten;
+            }
         }
 
+        // Create an array of points to draw the line
+        let bezierPoints = [];
 
-
-        let bezierPoints
-
+        // If the move has multiple lines, create an array of points for each line
+        // otherwise, create an array of points for the single line
         if(move.lines !== null) {
             if(move.lines.length > 1) {
                 let allLinePoints = []
                 for(let i = 0; i < move.lines.length; i++) {
+                    if(marker.moveStyles.density) {
+                        move.lines[i][0].density = marker.moveStyles.density;
+                    }
+                    if(marker.moveStyles.straighten) {
+                        move.lines[i][0].straighten = marker.moveStyles.straighten;
+                    }
                     let linePoints = createBezierPoints(move.lines[i][0], move.noise);
                     if(move.lines[i][1] == true) {
                         linePoints = linePoints.reverse()
@@ -167,95 +185,21 @@ class Mark {
         } else {
             bezierPoints = createBezierPoints(move.line, move.noise);
         }
-        
 
-        let lineGraphic = new PIXI.Container();
-        let spriteContainer = new PIXI.ParticleContainer(500000);
+        console.log(move.line)
 
-        let color = PIXI.utils.string2hex(marker.color);
-
-        if(move.pressure !== null) {
-            var widthFactor = (move.pressure.start - move.pressure.end) / bezierPoints.length
-            if(move.pressure.easing !== undefined) {
-                var easing = getEasing(move.pressure.easing)
-                easing = bezier(easing[0], easing[1], easing[2], easing[3])
-            }
-        } else {
-            var widthFactor = 0;
-        }
-
-        if(marker.nib.endSize !== undefined) {
-            var widthFactor = (marker.nib.size - marker.nib.endSize) / bezierPoints.length
-        }
-        
-        
-        if(move.pressure !== null) {
-            if (move.pressure.map !== undefined) {
-                var ipo;
-                var xPoint1 = 0;
-                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
-                var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
-                var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
-                var points = [
-                    { p: [xPoint1, 0] },
-                    { p: [xPoint2, rand(0,100)], lower: [-30, 0], upper: [30, 0] },
-                    { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                    { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                    { p: [bezierPoints.length, rand(0,100)] },
-                ];
-                /*var points = [
-                    { p: [xPoint1, 50], lower: [0, 0], upper: [0, 0] },
-                    { p: [xPoint2, 150], lower: [0, 0], upper: [0, 0] },
-                    { p: [xPoint3, 100], lower: [0, 0], upper: [0, 0] },
-                    { p: [xPoint4, 50], lower: [0, 0], upper: [0, 0] },
-                    { p: [bezierPoints.length, 0] },
-                ];*/
-                var ipo = new IPO(points);
-                drawSVG(points, bezierPoints.length, ipo, this.name + " pressureMap");
-            }
-
-            
-            if (move.pressure.alphaMap !== undefined) {
-                var ipoAlpha;
-                var xPoint1 = 0;
-                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
-                var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
-                var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
-                var points = [
-                    { p: [xPoint1, rand(0,100)] },
-                    { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                    { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                    { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                    { p: [bezierPoints.length, rand(0,100)] },
-                ];
-                var ipoAlpha = new IPO(points);
-                drawSVG(points, bezierPoints.length, ipoAlpha, this.name + " alpha");
-            }
-        }
-
-        if(move.jitter !== undefined) {
-            var ipoJitter;
-            var xPoint1 = 0;
-            var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
-            var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
-            var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
-            var jitterPoints = [
-                { p: [xPoint1, rand(0,100)] },
-                { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
-                { p: [bezierPoints.length, 0] },
-            ];
-            var ipoJitter = new IPO(jitterPoints);
-            drawSVG(jitterPoints, bezierPoints.length, ipoJitter, this.name + " jitter");
-        }
-
-        
-            
-
+        // Reverse the bezier points if the move is set to reverse
         if (move.reverse == true) {
             bezierPoints.reverse();
         }
+        
+
+        let widthFactor = 0;
+        let easing = getEasing('linear')
+        easing = bezier(easing[0], easing[1], easing[2], easing[3])
+
+
+        
         
         let dotGraphic
         if(marker.useSprites != true) {
@@ -270,17 +214,60 @@ class Mark {
         }
 
 
+        // For the number of iterations defined in the move, draw the line
+
+        // TO DO, Option for variations in the bezier points
+
         for (var i = 0; i < move.iterations; i++) {
 
+            // For each point in the bezier points array, draw a dot
             for (var j = 0; j < bezierPoints.length; j++) {
 
+                // Get the current point in the line
                 var drawPoint = [bezierPoints[j].x, bezierPoints[j].y]
 
-                if(move.pressure !== null) {
+                // Get the current percent of the line
+                var percent = (j / bezierPoints.length);
+
+                // Get the current alpha of the line
+                var alpha = marker.alpha;
+
+                // Get the radius of the marker nib  
+                let radius = marker.nib.size 
+
+                // Get the angle of the marker nib
+                let angle = marker.nib.angle || 0
+
+                // Get the amount of jitter for the marker nib
+                let jitter = move.jitter || 0
+
+                // Get the amount of times to repeat the marker nib
+                let fillAreaIterator = marker.nib.size * marker.nib.size
+
+                // Calculate alpha jitter
+                if(move.alphaJitter == true) {
+                    let alphaSimplex = noise(drawPoint[0], drawPoint[1]);
+                    alphaSimplex = mapNumbers(alphaSimplex, [-1.0, 1.0], [0.0, 1.0])
+                    alpha = alpha - alphaSimplex
+                    if(alpha < 0) {
+                        alpha = 0
+                    }
+                }
+
+                // Add some movement jitter
+                if(move.drawNoise !== undefined && move.drawNoise > 0) {
+                    let drawNoise = noise(drawPoint[0], drawPoint[1]);
+                    drawNoise = mapNumbers(drawNoise, [-1.0, 1.0], [0.0, 1.0])
+                    drawPoint[0] = drawPoint[0] + (drawNoise * move.drawNoise)
+                    drawPoint[1] = drawPoint[1] + (drawNoise * move.drawNoise)
+                }
+
+
+                /*if(move.pressure !== null) {
                     if(marker.nib.endSize !== undefined) {
-                        var radius = marker.nib.size - (widthFactor * j)
+                        radius = marker.nib.size - (widthFactor * j)
                     } else {
-                        var radius = marker.nib.size
+                        radius = marker.nib.size
                     }
                     if (move.pressure.map !== undefined) {
                         var value = ipo(j)
@@ -289,15 +276,12 @@ class Mark {
                     }
                 } else {
                     if(marker.nib.endSize !== undefined) {
-                        var radius = marker.nib.size - (widthFactor * j)
+                        radius = marker.nib.size - (widthFactor * j)
                     } else {
-                        var radius = marker.nib.size
+                        radius = marker.nib.size
                     }
                 }
-                
-                var alpha = marker.alpha;
-
-                var percent = (j / bezierPoints.length);
+            
 
                 var jitterEasing = getEasing('ease-in')
                 var jitter = move.jitter
@@ -321,22 +305,18 @@ class Mark {
                             alpha = 1
                         }
                     }
-                }
+                }*/
               
                 
-                let alphaSimplex = noise(drawPoint[0], drawPoint[1]);
-                alphaSimplex = mapNumbers(alphaSimplex, [-1.0, 1.0], [0.0, 1.0])
-                if(move.alphaJitter != 0) {
-                    alpha = alpha - (alphaSimplex / 8)
-                }
+                /*
 
                 if(marker.nib.endAngle !== undefined) {
                     var angle = mapNumbers(percent*100, [0, 100], [marker.nib.angle, marker.nib.endAngle]);
-                }
+                }*/
                 
 
-                let fillAreaIterator = marker.nib.size * marker.nib.size
-                fillAreaIterator = fillAreaIterator * radius
+                
+                /*fillAreaIterator = fillAreaIterator * radius
 
                 if(move.hold !== null) {
                    
@@ -348,19 +328,14 @@ class Mark {
                         radius = radius * move.hold.end
                         fillAreaIterator = fillAreaIterator * 5 * move.hold.end
                     }
-                }
+                }*/
 
                 fillAreaIterator = fillAreaIterator / marker.fillAreaReducer
 
                 for (var k = 0; k < fillAreaIterator; k++) {
 
-                    if (radius < 1) {
-                        var offsetX = randFloat(-radius, radius);
-                        var offsetY = randFloat(-radius, radius);
-                    } else {
-                        var offsetX = randFloat(-radius, radius);
-                        var offsetY = randFloat(-radius, radius);
-                    }                    
+                    var offsetX = randFloat(-radius, radius);
+                    var offsetY = randFloat(-radius, radius);               
                     
                     let widthFactorValue = widthFactor * j
 
@@ -375,11 +350,8 @@ class Mark {
                         widthFactorValue
                     );
 
-                    
-                    
 
                     if(marker.useSprites == true) {
-                        //console.log(size)
                         let sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
                         sprite.width = size*2;
                         sprite.height = size*2;
@@ -536,6 +508,8 @@ let getDrawPosition = function (drawPoint, marker, move, offsetX, offsetY, radiu
 			drawX = drawPoint[0] + r * Math.cos(theta);
 			drawY = drawPoint[1] + r * Math.sin(theta);
 		}
+        drawX = drawX - radius/2
+        drawY = drawY - radius/2
 	} else if (marker.nib.type == "oval") {
 
         let degreeValue = marker.nib.angle

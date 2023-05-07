@@ -1015,3 +1015,147 @@ for(let i = 1; i < 14; i++) {
 }
 //document.body.appendChild(exampleGallery);
 
+        /*if(move.pressure !== null) {
+            var widthFactor = (move.pressure.start - move.pressure.end) / bezierPoints.length
+            if(move.pressure.easing !== undefined) {
+                var easing = getEasing(move.pressure.easing)
+                easing = bezier(easing[0], easing[1], easing[2], easing[3])
+            }
+        } else {
+            var widthFactor = 0;
+        }
+
+        if(marker.nib.endSize !== undefined) {
+            var widthFactor = (marker.nib.size - marker.nib.endSize) / bezierPoints.length
+        }
+        
+        
+        if(move.pressure !== null) {
+            if (move.pressure.map !== undefined) {
+                var ipo;
+                var xPoint1 = 0;
+                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
+                var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
+                var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
+                var points = [
+                    { p: [xPoint1, 0] },
+                    { p: [xPoint2, rand(0,100)], lower: [-30, 0], upper: [30, 0] },
+                    { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [bezierPoints.length, rand(0,100)] },
+                ];
+                var points = [
+                    { p: [xPoint1, 50], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint2, 150], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint3, 100], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint4, 50], lower: [0, 0], upper: [0, 0] },
+                    { p: [bezierPoints.length, 0] },
+                ];
+                var ipo = new IPO(points);
+                drawSVG(points, bezierPoints.length, ipo, this.name + " pressureMap");
+            }
+
+            
+            if (move.pressure.alphaMap !== undefined) {
+                var ipoAlpha;
+                var xPoint1 = 0;
+                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
+                var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
+                var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
+                var points = [
+                    { p: [xPoint1, rand(0,100)] },
+                    { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [bezierPoints.length, rand(0,100)] },
+                ];
+                var ipoAlpha = new IPO(points);
+                drawSVG(points, bezierPoints.length, ipoAlpha, this.name + " alpha");
+            }
+        }
+
+        if(move.jitter !== undefined) {
+            var ipoJitter;
+            var xPoint1 = 0;
+            var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
+            var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
+            var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
+            var jitterPoints = [
+                { p: [xPoint1, rand(0,100)] },
+                { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [bezierPoints.length, 0] },
+            ];
+            var ipoJitter = new IPO(jitterPoints);
+            drawSVG(jitterPoints, bezierPoints.length, ipoJitter, this.name + " jitter");
+        }
+        */
+	   /*if(move.pressure !== null) {
+            var widthFactor = (move.pressure.start - move.pressure.end) / bezierPoints.length
+            if(move.pressure.easing !== undefined) {
+                var easing = getEasing(move.pressure.easing)
+                easing = bezier(easing[0], easing[1], easing[2], easing[3])
+            }
+        } else {
+            var widthFactor = 0;
+        }
+
+        if(marker.nib.endSize !== undefined) {
+            var widthFactor = (marker.nib.size - marker.nib.endSize) / bezierPoints.length
+        }
+        
+        
+        if(move.pressure !== null) {
+            if (move.pressure.map !== undefined) {
+                var ipo;
+                var xPoint1 = 0;
+                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
+                var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
+                var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
+                var points = [
+                    { p: [xPoint1, 0] },
+                    { p: [xPoint2, rand(0,100)], lower: [-30, 0], upper: [30, 0] },
+                    { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [bezierPoints.length, rand(0,100)] },
+                ];
+                var ipo = new IPO(points);
+                drawSVG(points, bezierPoints.length, ipo, this.name + " pressureMap");
+            }
+
+            
+            if (move.pressure.alphaMap !== undefined) {
+                var ipoAlpha;
+                var xPoint1 = 0;
+                var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
+                var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
+                var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
+                var points = [
+                    { p: [xPoint1, rand(0,100)] },
+                    { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                    { p: [bezierPoints.length, rand(0,100)] },
+                ];
+                var ipoAlpha = new IPO(points);
+                drawSVG(points, bezierPoints.length, ipoAlpha, this.name + " alpha");
+            }
+        }
+
+        if(move.jitter !== undefined) {
+            var ipoJitter;
+            var xPoint1 = 0;
+            var xPoint2 = parseInt((bezierPoints.length / 20) * 5);
+            var xPoint3 = parseInt((bezierPoints.length / 20) * 10);
+            var xPoint4 = parseInt((bezierPoints.length / 20) * 15);
+            var jitterPoints = [
+                { p: [xPoint1, rand(0,100)] },
+                { p: [xPoint2, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint3, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [xPoint4, rand(0,100)], lower: [0, 0], upper: [0, 0] },
+                { p: [bezierPoints.length, 0] },
+            ];
+            var ipoJitter = new IPO(jitterPoints);
+            drawSVG(jitterPoints, bezierPoints.length, ipoJitter, this.name + " jitter");
+        }*/

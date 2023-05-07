@@ -981,8 +981,7 @@ const drawFaceShape = (positions) => {
 
 	let rightJawDrawLine = new Move({
 		iterations: 1,
-		line: rightJawLine,
-		lines: [[rightJawLine, false], [leftJawLine, true]]
+		lines: [[rightJawLine, false], [leftJawLine, true]],
 	})
 	let rightJawMark = new Mark({
 		name: "rightJaw",
@@ -996,7 +995,7 @@ const drawFaceShape = (positions) => {
 
 
 
-	let leftJawDrawLine = new Move({
+	/*let leftJawDrawLine = new Move({
 		iterations: 1,
 		line: leftJawLine
 	})
@@ -1005,7 +1004,7 @@ const drawFaceShape = (positions) => {
 		marker: Pencil6B2,
 		move: leftJawDrawLine,
 		layer: faceShape
-	})
+	})*/
 
 
 
@@ -1079,18 +1078,17 @@ const drawFaceShape = (positions) => {
 
 	let headShape = new PIXI.Graphics()
 	headShape.beginTextureFill({texture: whiteTextureFill})
-	//headShape.beginFill(0xffffff, 1)
 	headShape.lineStyle(20, 0xffffff, 1)
 	headShape.drawPolygon(headShapePoints)
 	headShape.endFill()
+	faceShape.addChild(headShape)
 
 	//canvas.make(rightNeckMark)
 	//canvas.make(leftNeckMark)
 
 
 
-	faceShape.addChild(headShape)
-
+	
 
 	canvas.make(skullTopToRightJawMark)
 	canvas.make(skullTopToLeftJawMark)

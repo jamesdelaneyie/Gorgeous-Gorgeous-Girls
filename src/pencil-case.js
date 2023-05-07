@@ -57,13 +57,13 @@ let feltMarker = new Marker({
 let Pencil6B2 = new Marker({
     color: '#000000', 
 	material: { size: 1 },
-	nib: { type: "round", size: 3 },
-	alpha: 0.1,
+	nib: { type: "round", size: 1 },
+	alpha: 0.5,
 	fadeEdges: true,
-	useSprites: true,
+	useSprites: false,
     moveStyles: {
-        iterations: 1,
-        density: 200,
+        iterations: 2,
+        density: 1000,
 		jitter: 0.2,
 		/*pressure: {
 			start: 1,

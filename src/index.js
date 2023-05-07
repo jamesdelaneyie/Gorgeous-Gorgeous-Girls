@@ -685,6 +685,17 @@ const drawHeadSketch = () => {
 			rightEyeY = faceCentreY + 50// + (XAxisEllipseWidth/2)
 		}
 		rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
+		// set the pivot point to the center of the sprite
+		rightEyeSketch.pivot.x = rightEyeX 
+		rightEyeSketch.pivot.y = rightEyeY
+		rightEyeSketch.x = rightEyeX 
+		rightEyeSketch.y = rightEyeY
+		/*if(YAxisEllipseWidth > 40) {
+			console.log("YAxisEllipseWidth", YAxisEllipseWidth)
+			let percentage = YAxisEllipseWidth - 40
+			console.log("percentage", percentage)
+			rightEyeSketch.rotation = -percentage / 8
+		}*/
 	} else {
 		let rightEyeWidth = 55 - (YAxisEllipseWidth/4)
 		let rightEyeHeight = 35
@@ -820,6 +831,10 @@ const drawHeadSketch = () => {
 
 
 
+const easingWrapper = document.createElement('div');
+easingWrapper.id = 'easing-wrapper';
+easingWrapper.style = 'position: fixed; bottom: 0; left: 0; width: calc(100% - 300px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
+document.body.appendChild(easingWrapper);
 
 
 

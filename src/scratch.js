@@ -994,10 +994,6 @@ var noseMark = new Mark({
 	move: noseMove,
 	layer: noseContainer
 })*/
-const easingWrapper = document.createElement('div');
-easingWrapper.id = 'easing-wrapper';
-easingWrapper.style = 'position: fixed; bottom: 0; left: 0; width: calc(100% - 300px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
-document.body.appendChild(easingWrapper);
 
 const easingWrapperToggle = document.createElement('div');
 easingWrapperToggle.id = 'easing-wrapper-toggle';

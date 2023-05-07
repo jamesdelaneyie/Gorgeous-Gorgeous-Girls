@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/jamesdelaneyie/Gorgeous-Gorgeous-Girls/master/outputs/banner.png">
+<img src="https://raw.githubusercontent.com/jamesdelaneyie/Gorgeous-Gorgeous-Girls/master/outputs/faces/oo5Hj42nnR7vn6CVWZSRQwFSfcdV2yev7k6DCPRCwe93djaREEz.png">
 
 
 Gorgeous Gorgeous Girls 

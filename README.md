@@ -1,10 +1,10 @@
-<img src="https://raw.githubusercontent.com/jamesdelaneyie/Gorgeous-Gorgeous-Girls/master/outputs/faces/oo5Hj42nnR7vn6CVWZSRQwFSfcdV2yev7k6DCPRCwe93djaREEz.png">
+<img src="https://raw.githubusercontent.com/jamesdelaneyie/Gorgeous-Gorgeous-Girls/master/outputs/faces/ooTuapcXb1Sz3EQeaXirL6PhXeeH91t2zNSit7kdewFMvtFhdco.png">
 
 
 Gorgeous Gorgeous Girls 
 ================
 
-Gorgeous Gorgeous Girls (GGG) is a generative art project that creates illustrations in the style of the Girls series by the artist SlightlyFancy. 
+Gorgeous Gorgeous Girls (GGG) is a generative art project that creates illustrations in the style of the Girls series by the artist SlightlyFancy. Eventually the underlying code will be seperated into it's own library that can be used to create generative art using the base principles of the project.
 
 
 # How it works

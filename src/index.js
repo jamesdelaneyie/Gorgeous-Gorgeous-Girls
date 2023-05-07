@@ -252,12 +252,15 @@ const addReferenceImages = () => {
  * 
 /*/
 
-const YAxisMaxAngle = 0//220//200
-const XAxisMaxAngle = 0//220//200
+const YAxisMaxAngle = rand(0, 220)//220//200
+const XAxisMaxAngle = rand(0, 220)//0//220//200
+
+let eyePupilOffsetX = rand(-20, 20)
+let eyePupilOffsetY = rand(-20, 20)
 
 let YAxisEllipseWidth = rand(-YAxisMaxAngle, YAxisMaxAngle)
 let XAxisEllipseWidth = rand(-XAxisMaxAngle, XAxisMaxAngle)
-let headTilt = 0
+let headTilt = rand(-15, 15)
 
 //Create a range slider input element and add it to the page
 var YAxisSlider = document.createElement("INPUT");
@@ -279,7 +282,7 @@ document.body.appendChild(XAxisSlider);
 var headTiltSlider = document.createElement("INPUT");
 headTiltSlider.setAttribute("max", "20");
 headTiltSlider.setAttribute("min", "-20");
-headTiltSlider.setAttribute("value", "0");
+headTiltSlider.setAttribute("value", headTilt);
 headTiltSlider.setAttribute("step", "1");
 headTiltSlider.setAttribute("type", "range");
 document.body.appendChild(headTiltSlider);
@@ -287,7 +290,7 @@ document.body.appendChild(headTiltSlider);
 var eyeOffsetXSlider = document.createElement("INPUT");
 eyeOffsetXSlider.setAttribute("max", "20");
 eyeOffsetXSlider.setAttribute("min", "-20");
-eyeOffsetXSlider.setAttribute("value", "0");
+eyeOffsetXSlider.setAttribute("value", eyePupilOffsetX);
 eyeOffsetXSlider.setAttribute("step", "1");
 eyeOffsetXSlider.setAttribute("type", "range");
 document.body.appendChild(eyeOffsetXSlider);
@@ -295,7 +298,7 @@ document.body.appendChild(eyeOffsetXSlider);
 var eyeOffsetYSlider = document.createElement("INPUT");
 eyeOffsetYSlider.setAttribute("max", "20");
 eyeOffsetYSlider.setAttribute("min", "-20");
-eyeOffsetYSlider.setAttribute("value", "0");
+eyeOffsetYSlider.setAttribute("value", eyePupilOffsetY);
 eyeOffsetYSlider.setAttribute("step", "1");
 eyeOffsetYSlider.setAttribute("type", "range");
 document.body.appendChild(eyeOffsetYSlider);
@@ -320,8 +323,6 @@ const updateDrawValues = async () => {
 	artContainer.removeChildren()
 
 	let faceDrawPositions = drawHeadSketch()
-
-
 	let faceShape = drawFaceShape(faceDrawPositions)
 	artContainer.addChild(faceShape)
 	artContainer.addChild(faceDrawPositions.features)
@@ -365,16 +366,14 @@ eyeOffsetYSlider.addEventListener("input", updateDrawValues, false);
 
 const headCentreX = app.view.width/2//rand(500, 550)
 const headCentreY = app.view.height/2 - (app.view.height/10)//rand(500, 550)
-const jawHeight = app.view.height/15// rand(90, 110)
+const jawHeight = app.view.height/10// rand(90, 110)
 const headHeight = 440//220//rand(300, 350)
 const headWidth = 440//220//rand(270, 300)
 
 
 let isLeft = YAxisEllipseWidth < 0
-let eyePupilOffsetX = 0
-let eyePupilOffsetY = 0
-let debug = true
-let drawWireframe = true
+let debug = false
+let drawWireframe = false
 
 const drawHeadSketch = () => {
 
@@ -575,6 +574,24 @@ const drawHeadSketch = () => {
 	featureContainer.angle = headTilt
 
 
+	let irisSize = 50
+	let irisSizeY = 50
+
+	let irisMarker = new Marker({
+		color: hairColor,
+		material: { size: 1 },
+		nib: { type: "oval", size: irisSize, sizeY: irisSizeY, angle: 0 },
+		alpha: 0.2,
+		fillAreaReducer: 2,
+		useSprites: true,
+		moveStyles: {
+			//alphaJitter: true,
+		}
+	})
+
+
+
+
 	let leftEyeSketch = new Graphics()
 	leftEyeSketch.lineStyle(2, faceSketchesColor, 1)
 	if(isLeft) {
@@ -638,7 +655,7 @@ const drawHeadSketch = () => {
 
 
 	let leftPupil = new Graphics()
-	leftPupil.beginFill(0x000000)
+	leftPupil.beginFill(multiplyColor)
 	let leftPupilX 
 	let leftPupilY
 	if(isLeft) {
@@ -657,10 +674,31 @@ const drawHeadSketch = () => {
 		}
 		//leftPupilY = faceCentreY + 50
 	}
-	leftPupil.drawCircle(leftPupilX, leftPupilY, 5)
-	leftPupil.x = eyePupilOffsetX
-	leftPupil.y = eyePupilOffsetY
+	leftPupilX = leftPupilX + eyePupilOffsetX
+	leftPupilY = leftPupilY + eyePupilOffsetY
+	leftPupil.drawCircle(leftPupilX, leftPupilY, 10)
 	leftPupil.endFill()
+
+	let leftIrisMove = new Move({
+		iterations: 4,
+		line: new line({
+			x: leftPupilX,
+			y: leftPupilY,
+			x2: 1,
+			y2: 1,
+			density: 10
+		})
+	})
+	
+	let leftIrisMark = new Mark({
+		name: "Iris",
+		marker: irisMarker,
+		move: leftIrisMove,
+		layer: featureContainer
+	})
+
+	canvas.make(leftIrisMark)
+
 	featureContainer.addChild(leftPupil)
 
 
@@ -692,7 +730,7 @@ const drawHeadSketch = () => {
 		if(rightEyeHeight > 80) {
 			rightEyeHeight = 80
 		}
-		console.log("rightEyeWidth", rightEyeWidth)
+		//console.log("rightEyeWidth", rightEyeWidth)
 		let rightEyeY
 		if(isDown) {
 			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)
@@ -745,8 +783,12 @@ const drawHeadSketch = () => {
 	rightEyeBrow.lineTo(rightEyeBrowXEnd, rightEyeBrowYEnd)
 	featureContainer.addChild(rightEyeBrow)
 
+
+
+	
+
 	let rightPupil = new Graphics()
-	rightPupil.beginFill(0x000000)
+	rightPupil.beginFill(multiplyColor)
 	let rightPupilX
 	let rightPupilY
 	if(isLeft) {
@@ -765,10 +807,35 @@ const drawHeadSketch = () => {
 		}
 
 	}
-	rightPupil.drawCircle(rightPupilX, rightPupilY, 5)
+	rightPupilX = rightPupilX + eyePupilOffsetX
+	rightPupilY = rightPupilY + eyePupilOffsetY
+	rightPupil.drawCircle(rightPupilX, rightPupilY, 10)
 	rightPupil.endFill()
-	rightPupil.x = eyePupilOffsetX
-	rightPupil.y = eyePupilOffsetY
+
+
+
+	
+	
+	let irisMove = new Move({
+		iterations: 4,
+		line: new line({
+			x: rightPupilX,
+			y: rightPupilY,
+			x2: 1,
+			y2: 1,
+			density: 10
+		})
+	})
+	
+	let irisMark = new Mark({
+		name: "Iris",
+		marker: irisMarker,
+		move: irisMove,
+		layer: featureContainer
+	})
+
+	canvas.make(irisMark)
+
 	featureContainer.addChild(rightPupil)
 
 	

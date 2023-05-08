@@ -186,7 +186,7 @@ class Mark {
             bezierPoints = createBezierPoints(move.line, move.noise);
         }
 
-        console.log(move.line)
+        //console.log(move.line)
 
         // Reverse the bezier points if the move is set to reverse
         if (move.reverse == true) {

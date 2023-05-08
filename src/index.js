@@ -3,7 +3,7 @@ let startTime = Date.now();
 import * as PIXI from "pixi.js";
 import { SmoothGraphics as Graphics } from "@pixi/graphics-smooth";
 import { Mark, Marker, Move, line } from "./draw.js";
-import { Fill } from "./fill.js";
+import { Fill, addFillBackground } from "./fill.js";
 import { rand, randFloat, findClosestPoints } from "./math.js";
 import { getPositionOnLine } from "./bezier.js";
 import { bezier, getEasing  } from "./easing.js";
@@ -11,6 +11,7 @@ import { getColors } from "./colors.js";
 import { Pencil2B, Pencil6B, Pen_1mm, Pen_2mm, feltMarker, Pencil6B2 } from "./pencil-case.js";
 import { createBezierPoints } from "./bezier.js";
 import { drawEllipse, drawEllipseCurves } from "./shapes.js";
+import { controlPanel, addFXHashValues, addRenderTime, addColorSwatchButton, addColorSwatchesToAside } from "./UI.js";
 // the 64 chars hex number fed to your algorithm
 //console.log(fxhash);
 
@@ -31,51 +32,6 @@ window.$fxhashFeatures = {
 
 
 
-
-
-
-
-const addAside = () => {
-	const aside = document.createElement("aside")
-	document.body.appendChild(aside)
-}
-
-const addFXHashValues = () => {
-	const fxhashDiv = document.createElement("div")
-	fxhashDiv.innerText = `fxHash: ${fxhash}\n\npseudo random values:\n[\n\t${fxrand()},\n\t${fxrand()},\n\t${fxrand()},\n\t${fxrand()}\n]`;
-	document.querySelector("aside").appendChild(fxhashDiv)
-}
-
-const addRenderTime = () => {
-	const endTime = Date.now()
-	const renderTime = (endTime - startTime) / 1000
-
-	const renderTimeDiv = document.createElement("div")
-	renderTimeDiv.innerHTML = "Render time: " + renderTime + " seconds"
-	renderTimeDiv.setAttribute("id", "renderTime")
-	document.querySelector("aside").appendChild(renderTimeDiv)
-}
-
-const addColorSwatchButton = () => {
-	let colorSwitchButton = document.createElement("button");
-	colorSwitchButton.innerHTML = "Use set colors";
-	document.querySelector("aside").appendChild(colorSwitchButton);
-
-	colorSwitchButton.onclick = function () {
-		projectSettings.colors = !projectSettings.colors;
-		localStorage.setItem("projectSettings", JSON.stringify(projectSettings));
-		window.location.reload();
-	}
-}
-
-addAside()
-addFXHashValues()
-addColorSwatchButton()
-
-
-
-
-
 let projectSettings
 if (!localStorage.getItem("projectSettings")) {
 	projectSettings = {
@@ -90,6 +46,27 @@ if (!localStorage.getItem("projectSettings")) {
 		//colorSwitchButton.innerHTML = "Use random colors";
 	}
 }
+let colors
+if(projectSettings.colors) {
+	colors = getColors("random");
+} else {
+	colors = getColors();
+}
+
+let hairColor = colors[0]//.hairColor;
+let highlightColor = colors[1]//.highlightColor;
+let multiplyColor = colors[2]//multiplyColor;
+
+console.log(colors)
+
+
+
+Pencil6B2.color = multiplyColor
+
+
+
+addFXHashValues()
+addColorSwatchesToAside(colors)
 
 
 
@@ -107,12 +84,10 @@ let app = new PIXI.Application({
 	width: 2048,
 	height: 2048,
 	antialias: false,
-	//useContextAlpha: false,
 	autoDensity: true,
 	resolution: window.devicePixelRatio || 1,
 	roundPixels: true,
 	autoStart: false,
-	preserveDrawingBuffer: true,
 	powerPreference: "high-performance",
 	backgroundColor: 0x00ff00,
 });
@@ -137,85 +112,27 @@ app.view.id = "canvas";
 
 	
 
-let colors
-if(projectSettings.colors) {
-	colors = getColors("random");
-} else {
-	colors = getColors();
-}
-
-let hairColor = colors[0]//.hairColor;
-let highlightColor = colors[1]//.highlightColor;
-let multiplyColor = colors[2]//multiplyColor;
-
-console.log(colors)
-
-Pencil6B2.color = multiplyColor
-
-const addColorSwatchesToAside = (colors) => {
-	const colorSwatches = document.createElement("div")
-	colorSwatches.setAttribute("id", "color-swatches")
-	for(let i = 0; i < colors.length; i++) {
-		const colorSwatch = document.createElement("div")
-		colorSwatch.style.backgroundColor = colors[i]
-		colorSwatches.appendChild(colorSwatch)
-	}
-	document.querySelector("aside").appendChild(colorSwatches)
-}
-
-addColorSwatchesToAside(colors)
-
-
-const addFillBackground = (color, layer) => {
-
-	let fillBackgroundMarker = new Marker({
-		material: {size: 0.5, sizeJitter: 0.2},
-		nib: { type: "round", size: 2},
-		alpha: 0.5
-	});
-
-	let backgroundTexture = new Fill({
-		x: 0, 
-		y: 0,
-		color: color,
-		width: app.view.width, 
-		height: app.view.height, 
-		shape: "circle",
-		layer: layer,
-		angle: rand(0, 360),
-		gap: rand(8, 12),
-		marker: fillBackgroundMarker,
-		moveStyles: {
-			iterations: 10,
-			jitter: 2,
-			noise: {
-				frequency: 0,
-				magnitude: 0,
-				smoothing: 0,
-			}
-		}
-	});
-
-	return backgroundTexture
-
-}
 
 
 
-let debug = true
-let drawWireframe = true
+
+
+
+let debug = false
+let drawWireframe = false
 
 
 
 const artContainer = new PIXI.Container();
 const backgroundContainer = new PIXI.Container();
 
-
+let whiteTextureFill
 if(drawWireframe) {
-	let whiteTexture = addFillBackground('#fcfcfc', backgroundContainer)
+} else {
+	let whiteTexture = addFillBackground(app, '#fcfcfc', backgroundContainer)
 	let whiteTextureLayer = whiteTexture.fillTexture()
 	canvas.stage.addChild(whiteTextureLayer)
-	let whiteTextureFill = new PIXI.Texture.from(app.view)
+	whiteTextureFill = new PIXI.Texture.from(app.view)
 	let whiteTextureTest = new PIXI.Sprite(whiteTextureFill)
 	canvas.stage.addChild(whiteTextureTest)
 }
@@ -228,7 +145,7 @@ if(drawWireframe) {
 	backgroundColor.endFill();
 	canvas.stage.addChild(backgroundColor)
 } else {
-	let backgroundTexture = addFillBackground(highlightColor, backgroundContainer)
+	let backgroundTexture = addFillBackground(app, highlightColor, backgroundContainer)
 	let backgroundLayer = backgroundTexture.fillTexture()
 	canvas.stage.addChild(backgroundLayer)
 }
@@ -264,66 +181,39 @@ const addReferenceImages = () => {
  * 
 /*/
 
-const YAxisMaxAngle = rand(0, 220)//220//200
-const XAxisMaxAngle = rand(0, 220)//0//220//200
+const YAxisMaxAngle = rand(0, 225)
+const XAxisMaxAngle = rand(0, 225)
+
+let YAxisEllipseWidth = rand(-YAxisMaxAngle, YAxisMaxAngle)
+let XAxisEllipseWidth = rand(-XAxisMaxAngle, XAxisMaxAngle)
+
+let headTilt = rand(-15, 15)
 
 let eyePupilOffsetX = rand(-20, 20)
 let eyePupilOffsetY = rand(-20, 20)
 
-let YAxisEllipseWidth = rand(-YAxisMaxAngle, YAxisMaxAngle)
-let XAxisEllipseWidth = rand(-XAxisMaxAngle, XAxisMaxAngle)
-let headTilt = rand(-15, 15)
-
-//Create a range slider input element and add it to the page
-var YAxisSlider = document.createElement("INPUT");
-YAxisSlider.setAttribute("max", "220");
-YAxisSlider.setAttribute("min", "-220");
-YAxisSlider.setAttribute("value", YAxisEllipseWidth);
-YAxisSlider.setAttribute("step", "1");
-YAxisSlider.setAttribute("type", "range");
-document.body.appendChild(YAxisSlider);
-
-var XAxisSlider = document.createElement("INPUT");
-XAxisSlider.setAttribute("max", "220");
-XAxisSlider.setAttribute("min", "-220");
-XAxisSlider.setAttribute("value", XAxisEllipseWidth);
-XAxisSlider.setAttribute("step", "1");
-XAxisSlider.setAttribute("type", "range");
-document.body.appendChild(XAxisSlider);
-
-var headTiltSlider = document.createElement("INPUT");
-headTiltSlider.setAttribute("max", "20");
-headTiltSlider.setAttribute("min", "-20");
-headTiltSlider.setAttribute("value", headTilt);
-headTiltSlider.setAttribute("step", "1");
-headTiltSlider.setAttribute("type", "range");
-document.body.appendChild(headTiltSlider);
-
-var eyeOffsetXSlider = document.createElement("INPUT");
-eyeOffsetXSlider.setAttribute("max", "20");
-eyeOffsetXSlider.setAttribute("min", "-20");
-eyeOffsetXSlider.setAttribute("value", eyePupilOffsetX);
-eyeOffsetXSlider.setAttribute("step", "1");
-eyeOffsetXSlider.setAttribute("type", "range");
-document.body.appendChild(eyeOffsetXSlider);
-
-var eyeOffsetYSlider = document.createElement("INPUT");
-eyeOffsetYSlider.setAttribute("max", "20");
-eyeOffsetYSlider.setAttribute("min", "-20");
-eyeOffsetYSlider.setAttribute("value", eyePupilOffsetY);
-eyeOffsetYSlider.setAttribute("step", "1");
-eyeOffsetYSlider.setAttribute("type", "range");
-document.body.appendChild(eyeOffsetYSlider);
-
+const headCentreX = app.view.width/2
+const headCentreY = app.view.height/2 - (app.view.height/10)
+const jawHeight = app.view.height/10
+const headHeight = 440
+const headWidth = 440
 
 //create a variable to store the value of the slider
 const updateDrawValues = async () => {
+
+	startTime = Date.now();
 
 	let XValue = XAxisSlider.value
 	let YValue = YAxisSlider.value
 	let headTiltValue = headTiltSlider.value
 	let eyeOffsetXValue = eyeOffsetXSlider.value
 	let eyeOffsetYValue = eyeOffsetYSlider.value
+
+	XAxisSlider.setAttribute("value", XValue)
+	YAxisSlider.setAttribute("value", YValue)
+	headTiltSlider.setAttribute("value", headTiltValue)
+	eyeOffsetXSlider.setAttribute("value", eyeOffsetXValue)
+	eyeOffsetYSlider.setAttribute("value", eyeOffsetYValue)
 
 	//use the variable to change the scale of the container
 	XAxisEllipseWidth = Number(XValue)
@@ -342,54 +232,101 @@ const updateDrawValues = async () => {
 		artContainer.addChild(faceDrawPositions.output)
 	}
 
-	//addReferenceImages()
-
 	app.render()
 	app.stage.filters = [new PIXI.filters.FXAAFilter()];
+	
 
+	//Append the line isLeft to the aside in the DOM
+	const headDirection = document.createElement('span');
+	headDirection.classList.add('head-direction-left');
+	headDirection.innerHTML = isLeft ? 'Facing Left' : 'Facing Right';
+	// if the span is there, update it, otherwise append it
+	controlPanel.querySelector('.head-direction-left')
+		? controlPanel.querySelector('.head-direction-left').innerHTML = isLeft ? 'Facing Left' : 'Facing Right'
+		: controlPanel.appendChild(headDirection);
+
+	//Append the line isTop to the aside in the DOM
+	const headDirection2 = document.createElement('span');
+	headDirection2.classList.add('head-direction-down');
+	headDirection2.innerHTML = isDown ? 'Facing Down' : 'Facing Up';
+	// if the span is there, update it, otherwise append it
+	controlPanel.querySelector('.head-direction-down')
+		? controlPanel.querySelector('.head-direction-down').innerHTML = isDown ? 'Facing Down' : 'Facing Up'
+		: controlPanel.appendChild(headDirection2);
+
+	//aside.appendChild(headDirection2);
+
+	/*
+	*
+	* 	Render the image to an img element
+	*  and then setup a download link
+	* 
+	*/
 	const dataUri = app.renderer.plugins.extract.base64(app.stage);
 
-	let thePreviewImage = document.querySelector("aside img")
-	if(thePreviewImage) {
-		thePreviewImage.src = dataUri
-	} 
 	let downloadButton = document.querySelector("aside a")
 	if(downloadButton) {
 		downloadButton.href = dataUri
 	}
 
-
 	const image = new Image()
-	
 	image.src = app.view.toDataURL('image/png');//await app.renderer.plugins.extract.image(canvas.stage);
-	thePreviewImage.remove()
-	document.querySelector("aside").appendChild(image)
-
+	const oldImage = controlPanel.querySelector("img")
+	if(oldImage) {
+		oldImage.remove()
+	}
+	controlPanel.appendChild(image)
+	addRenderTime(startTime)
 
 }
 
 
-//add an event listener to the slider that calls the function updateValue when the value changes
-YAxisSlider.addEventListener("input", updateDrawValues, false);
-XAxisSlider.addEventListener("input", updateDrawValues, false);
-headTiltSlider.addEventListener("input", updateDrawValues, false);
-eyeOffsetXSlider.addEventListener("input", updateDrawValues, false);
-eyeOffsetYSlider.addEventListener("input", updateDrawValues, false);
 
-const headCentreX = app.view.width/2//rand(500, 550)
-const headCentreY = app.view.height/2 - (app.view.height/10)//rand(500, 550)
-const jawHeight = app.view.height/10// rand(90, 110)
-const headHeight = 440//220//rand(300, 350)
-const headWidth = 440//220//rand(270, 300)
+const createSlider = (name, min, max, value, step, type) => {
+	var slider = document.createElement("INPUT");
+	slider.setAttribute("max", max);
+	slider.setAttribute("min", min);
+	slider.setAttribute("value", value);
+	slider.setAttribute("step", step);
+	slider.setAttribute("type", type);
+	slider.setAttribute("name", name);
+	controlPanel.appendChild(slider);
+	slider.addEventListener("input", updateDrawValues, false);
+	return slider
+}
+
+const YAxisSlider = createSlider("X Axis", -225, 225, YAxisEllipseWidth, 1, "range")
+const XAxisSlider = createSlider("Y Axis", -225, 225, XAxisEllipseWidth, 1, "range")
+const headTiltSlider = createSlider("Tilt Angle", -20, 20, headTilt, 1, "range")
+const eyeOffsetXSlider = createSlider("Eye Offset X", -20, 20, eyePupilOffsetX, 1, "range")
+const eyeOffsetYSlider = createSlider("Eye Offset Y", -20, 20, eyePupilOffsetY, 1, "range")
+
+//Create a range slider input element and add it to the page
+//set the color for all inputs on the page to the highlight color
+const inputs = document.querySelectorAll("input")
+inputs.forEach(input => {
+	input.style.color = highlightColor
+})
+
+
+
+
+
+
+
+
 
 
 let isLeft = YAxisEllipseWidth < 0
+let isDown = XAxisEllipseWidth < 0
 
 
 const drawHeadSketch = () => {
 
 	const headContainer = new PIXI.Container()
 
+	isLeft = YAxisEllipseWidth < 0
+	isDown = XAxisEllipseWidth < 0
 
 	const YAxisEllipsePoints = []
 	const XAxisEllipsePoints = []
@@ -398,9 +335,6 @@ const drawHeadSketch = () => {
 	const jawColor = 0x0000ff
 	const centrePointColor = 0x0000ff
 	const faceSketchesColor = 0xff0000
-
-
-	isLeft = YAxisEllipseWidth < 0
 
 	// Skull Shape
 	const headSkullShape = new Graphics()
@@ -439,12 +373,7 @@ const drawHeadSketch = () => {
 		drawEllipse(headCentreX + (YAxisEllipseWidth/5), headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
 	}
 
-	//Append the line isLeft to the aside in the DOM
-	const aside = document.querySelector('aside');
-	const headDirection = document.createElement('span');
-	headDirection.classList.add('head-direction');
-	headDirection.innerHTML = isLeft ? 'Facing Left' : 'Facing Right';
-	aside.appendChild(headDirection);
+
 
 
 	// X Axis Sketch Line
@@ -456,7 +385,7 @@ const drawHeadSketch = () => {
 
 	const XOutcome = rand(0, 1);
 	//const isDown = XOutcome > X_MIN_OUTCOME;
-	const isDown = XAxisEllipseWidth < 0
+
 	XAxisEllipseWidth = Math.abs(XAxisEllipseWidth)
 	const XStartAngle = isDown ? X_AXIS_TOP_START : X_AXIS_BOTTOM_START;
 	const XEndAngle = isDown ? X_AXIS_TOP_END : X_AXIS_BOTTOM_END;
@@ -469,11 +398,7 @@ const drawHeadSketch = () => {
 		drawEllipse(headCentreX - (YAxisEllipseWidth/5), headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
 	}
 
-	//Append the line isTop to the aside in the DOM
-	const headDirection2 = document.createElement('span');
-	headDirection2.classList.add('head-direction');
-	headDirection2.innerHTML = isDown ? 'Facing Down' : 'Facing Up';
-	aside.appendChild(headDirection2);
+
 
 	// Get the centre of the face
 	const closestPoints = findClosestPoints(YAxisEllipsePoints, XAxisEllipsePoints)
@@ -700,7 +625,6 @@ const drawHeadSketch = () => {
 		} else {
 			leftPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
 		}
-		//leftPupilY = faceCentreY + 50
 	}
 	leftPupilX = leftPupilX + eyePupilOffsetX
 	leftPupilY = leftPupilY + eyePupilOffsetY
@@ -767,7 +691,7 @@ const drawHeadSketch = () => {
 		if(rightEyeHeight > 80) {
 			rightEyeHeight = 80
 		}
-		//console.log("rightEyeWidth", rightEyeWidth)
+		
 		let rightEyeY
 		if(isDown) {
 			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)
@@ -789,7 +713,7 @@ const drawHeadSketch = () => {
 	} else {
 		let rightEyeWidth = 110 - (YAxisEllipseWidth/4)
 		let rightEyeHeight = 70
-		let rightEyeX = faceCentreX + 210 - (YAxisEllipseWidth/1.5)
+		let rightEyeX = faceCentreX + 210 - (YAxisEllipseWidth/1.4)
 		let rightEyeY
 		if(isDown) {
 			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
@@ -977,7 +901,7 @@ const drawHeadSketch = () => {
 
 const easingWrapper = document.createElement('div');
 easingWrapper.id = 'easing-wrapper';
-easingWrapper.style = 'position: fixed; bottom: 0; left: 0; width: calc(100% - 300px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
+easingWrapper.style = 'position: fixed; bottom: 0; right: 0; width: calc(100% - 500px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
 document.body.appendChild(easingWrapper);
 
 
@@ -1226,7 +1150,6 @@ const drawFaceShape = (positions) => {
 	} else {
 		headShape.beginTextureFill({texture: whiteTextureFill})
 	}
-	
 	headShape.lineStyle(20, 0xffffff, 1)
 	headShape.drawPolygon(headShapePoints)
 	headShape.endFill()
@@ -1244,8 +1167,6 @@ const drawFaceShape = (positions) => {
 		canvas.make(skullTopToLeftJawMark)
 		canvas.make(rightJawMark)
 	}
-
-	//canvas.make(leftJawMark)
 
 	faceShape.addChild(debugContainer)
 
@@ -1270,33 +1191,12 @@ setTimeout(() => {
 
 
 app.render();
-addRenderTime();
+addRenderTime(startTime);
 
 
-/*
- *
- * 	Render the image to an img element
- *  and then setup a download link
- * 
- */
-
-(async () => {
-	const dataUri = app.renderer.plugins.extract.base64(app.stage);
-	const res = await fetch(dataUri);
-	const blob = await res.blob();
-	
-	const img = document.createElement('img');
-	img.src = URL.createObjectURL(blob);
-	document.querySelector("aside").appendChild(img)
 
 
-	const link = document.createElement('a');
-	link.href = dataUri;
-	link.download = ''+fxhash+'.png';
-	link.innerHTML = 'Download';
-	document.querySelector("aside").appendChild(link);
 
-})();
 
 
 

@@ -226,4 +226,38 @@ class Fill {
 
 }
 
-export { Fill };
+const addFillBackground = (app, color, layer) => {
+
+	let fillBackgroundMarker = new Marker({
+		material: {size: 0.5, sizeJitter: 0.2},
+		nib: { type: "round", size: 2},
+		alpha: 0.5
+	});
+
+	let backgroundTexture = new Fill({
+		x: 0, 
+		y: 0,
+		color: color,
+		width: app.view.width, 
+		height: app.view.height, 
+		shape: "circle",
+		layer: layer,
+		angle: rand(0, 360),
+		gap: rand(8, 12),
+		marker: fillBackgroundMarker,
+		moveStyles: {
+			iterations: 10,
+			jitter: 2,
+			noise: {
+				frequency: 0,
+				magnitude: 0,
+				smoothing: 0,
+			}
+		}
+	});
+
+	return backgroundTexture
+
+}
+
+export { Fill, addFillBackground };

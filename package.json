@@ -1,9 +1,9 @@
 {
-  "name": "fxhash-boilerplate-webpack",
+  "name": "GGG",
   "version": "1.0.0",
   "description": "a boilerplate to create a generative token on fxhash",
   "main": "index.js",
-  "author": "fxhash",
+  "author": "jamesdelaneyie",
   "license": "MIT",
   "scripts": {
     "build": "webpack --config ./config/webpack.config.prod.js",

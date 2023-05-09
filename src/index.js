@@ -46,6 +46,7 @@ if (!localStorage.getItem("projectSettings")) {
 		//colorSwitchButton.innerHTML = "Use random colors";
 	}
 }
+
 let colors
 if(projectSettings.colors) {
 	colors = getColors("random");
@@ -118,8 +119,8 @@ app.view.id = "canvas";
 
 
 
-let debug = false
-let drawWireframe = false
+let debug = true
+let drawWireframe = true
 
 
 
@@ -187,6 +188,9 @@ const XAxisMaxAngle = rand(0, 225)
 let YAxisEllipseWidth = rand(-YAxisMaxAngle, YAxisMaxAngle)
 let XAxisEllipseWidth = rand(-XAxisMaxAngle, XAxisMaxAngle)
 
+let isLeft = YAxisEllipseWidth < 0
+let isDown = XAxisEllipseWidth < 0
+
 let headTilt = rand(-15, 15)
 
 let eyePupilOffsetX = rand(-20, 20)
@@ -197,6 +201,8 @@ const headCentreY = app.view.height/2 - (app.view.height/10)
 const jawHeight = app.view.height/10
 const headHeight = 440
 const headWidth = 440
+
+let shoulderSlant = rand(-100, 100)
 
 //create a variable to store the value of the slider
 const updateDrawValues = async () => {
@@ -223,6 +229,8 @@ const updateDrawValues = async () => {
 	eyePupilOffsetY = Number(eyeOffsetYValue)
 
 	artContainer.removeChildren()
+	debugNeckContainer.removeChildren()
+	debugContainer.removeChildren()
 
 	let faceDrawPositions = drawHeadSketch()
 	let faceShape = drawFaceShape(faceDrawPositions)
@@ -231,6 +239,7 @@ const updateDrawValues = async () => {
 	if(drawWireframe) {
 		artContainer.addChild(faceDrawPositions.output)
 	}
+
 
 	app.render()
 	app.stage.filters = [new PIXI.filters.FXAAFilter()];
@@ -262,12 +271,13 @@ const updateDrawValues = async () => {
 	*  and then setup a download link
 	* 
 	*/
-	const dataUri = app.renderer.plugins.extract.base64(app.stage);
+	const dataUri = await app.renderer.plugins.extract.base64(app.stage);
 
 	let downloadButton = document.querySelector("aside a")
 	if(downloadButton) {
 		downloadButton.href = dataUri
 	}
+	addRenderTime(startTime)
 
 	const image = new Image()
 	image.src = app.view.toDataURL('image/png');//await app.renderer.plugins.extract.image(canvas.stage);
@@ -276,7 +286,9 @@ const updateDrawValues = async () => {
 		oldImage.remove()
 	}
 	controlPanel.appendChild(image)
-	addRenderTime(startTime)
+
+
+	
 
 }
 
@@ -317,8 +329,7 @@ inputs.forEach(input => {
 
 
 
-let isLeft = YAxisEllipseWidth < 0
-let isDown = XAxisEllipseWidth < 0
+
 
 
 const drawHeadSketch = () => {
@@ -424,19 +435,21 @@ const drawHeadSketch = () => {
 	
 	let jawBottomX
 	if(isLeft) {
-		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) - (YAxisEllipseWidth/4)
+		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)// - (YAxisEllipseWidth/4)
 		if(isDown) {
-			jawBottomX = jawBottomX + (XAxisEllipseWidth/4)
+			jawBottomX = jawBottomX// + (XAxisEllipseWidth/4)
 		}
 	} else {
-		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) + (YAxisEllipseWidth/4)
+		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)// + (YAxisEllipseWidth/4)
 		if(isDown) {
-			jawBottomX = jawBottomX - (XAxisEllipseWidth/4)
+			jawBottomX = jawBottomX //- (XAxisEllipseWidth/4)
 		}
 		
 	}
 	
 	const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
+	const jawEdgeChinY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight - 30) : headCentreY + headHeight + (faceCentreDistanceY) + (jawHeight - 30) + (faceCentreDistanceY/4)
+
 
 	let rightCheek = new Graphics()
 	rightCheek.lineStyle(2, jawColor, 1)
@@ -455,10 +468,25 @@ const drawHeadSketch = () => {
 	} else {
 		rightJawEdgeX = headCentreX + 320 
 	}
- 
 
+	let rightJawChinEdgeX
+	if(isLeft) {
+		rightJawChinEdgeX = headCentreX + 120 - (YAxisEllipseWidth/3)
+	} else {
+		rightJawChinEdgeX = headCentreX + 120 + (YAxisEllipseWidth/3)
+	}
+
+
+	
 	const rightJawEdge = {x: rightJawEdgeX, y: jawEdgeY}
+	const rightJawChinEdge = {x: rightJawChinEdgeX, y: jawEdgeChinY}
 	const rightJawBottom = {x: jawBottomX, y: jawBottomY}
+
+	let chinEdge = new Graphics()
+	chinEdge.lineStyle(2, 0xff00ff, 1)
+	chinEdge.beginFill(0xff00ff)
+	chinEdge.drawCircle(rightJawChinEdge.x, rightJawChinEdge.y, 20)
+	headContainer.addChild(chinEdge)
 
 
 	rightCheek.moveTo(rightJawStart.x, rightJawStart.y) // Right Jaw Top
@@ -483,8 +511,24 @@ const drawHeadSketch = () => {
 	} else {
 		leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3)
 	}
+
+	let leftJawChinEdgeX
+	if(isLeft) {
+		leftJawChinEdgeX = headCentreX - 120 - (YAxisEllipseWidth/3)
+	} else {
+		leftJawChinEdgeX = headCentreX - 120 + (YAxisEllipseWidth/3)
+	}
+
 	const leftJawEdge = {x: leftJawEdgeX, y: jawEdgeY}
+	const leftJawChinEdge = {x: leftJawChinEdgeX, y: jawEdgeChinY}
 	const leftJawBottom = {x: jawBottomX, y: jawBottomY}
+
+	let chinEdge2 = new Graphics()
+	chinEdge2.lineStyle(2, 0xff00ff, 1)
+	chinEdge2.beginFill(0xff00ff)
+	chinEdge2.drawCircle(leftJawChinEdge.x, leftJawChinEdge.y, 20)
+	headContainer.addChild(chinEdge2)
+
 
 	leftCheek.moveTo(leftJawStart.x, leftJawStart.y) // Left Jaw Top
 	leftCheek.lineTo(leftJawEdge.x, leftJawEdge.y) // Left Jaw Edge
@@ -534,24 +578,25 @@ const drawHeadSketch = () => {
 
 
 
+	let leftEyeContainer = new PIXI.Container()
+	let leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight
 
 	let leftEyeSketch = new Graphics()
 	leftEyeSketch.lineStyle(2, faceSketchesColor, 1)
+	
 	if(isLeft) {
-		let leftEyeWidth = 110 - (YAxisEllipseWidth/4)
-		let leftEyeHeight = 70
-		let leftEyeX = faceCentreX - 210 + (YAxisEllipseWidth/1.5)
-		let leftEyeY
+		leftEyeWidth = 110 - (YAxisEllipseWidth/4)
+		leftEyeHeight = 70
+		leftEyeX = faceCentreX - 210 + (YAxisEllipseWidth/1.5)
 		if(isDown) {
-			leftEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) 
+			leftEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
-			leftEyeY = faceCentreY + 100// + (XAxisEllipseWidth/3)
+			leftEyeY = faceCentreY + 100
 		}
-		leftEyeSketch.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
 	} else {
-		let leftEyeWidth = 110 * (YAxisEllipseWidth/75)
-		let leftEyeHeight = 70// * (YAxisEllipseWidth/75)
-		let leftEyeX = faceCentreX - 220 - (YAxisEllipseWidth/3)
+		leftEyeWidth = 110 * (YAxisEllipseWidth/75)
+		leftEyeHeight = 70
+		leftEyeX = faceCentreX - 220 - (YAxisEllipseWidth/3)
 		if(leftEyeWidth < 110) {
 			leftEyeWidth = 110
 		}
@@ -564,15 +609,26 @@ const drawHeadSketch = () => {
 		if(leftEyeHeight > 80) {
 			leftEyeHeight = 80
 		}
-		let leftEyeY
 		if(isDown) {
 			leftEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)
 		} else {
-			leftEyeY = faceCentreY + 100// + (XAxisEllipseWidth/3)
+			leftEyeY = faceCentreY + 100
 		}
-		leftEyeSketch.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
 	}
-	featureContainer.addChild(leftEyeSketch)
+	leftEyeSketch.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
+
+	let leftEyeMask = new Graphics()
+	leftEyeMask.beginFill(0x000000)
+	leftEyeMask.lineStyle(2, 0x000000, 1)
+	leftEyeMask.drawEllipse(leftEyeX, leftEyeY, leftEyeWidth, leftEyeHeight)
+	leftEyeMask.endFill()
+	
+	leftEyeContainer.mask = leftEyeMask
+
+	leftEyeContainer.addChild(leftEyeSketch)
+	leftEyeContainer.addChild(leftEyeMask)
+
+	featureContainer.addChild(leftEyeContainer)
 
 	let leftEyeBrow = new Graphics()
 	leftEyeBrow.lineStyle(2, faceSketchesColor, 1)
@@ -614,16 +670,16 @@ const drawHeadSketch = () => {
 	if(isLeft) {
 		leftPupilX = faceCentreX - 210 + (YAxisEllipseWidth/1.2)
 		if(isDown) {
-			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
+			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
-			leftPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
+			leftPupilY = faceCentreY + 100
 		}
 	} else {
 		leftPupilX = faceCentreX - 210 - (YAxisEllipseWidth/3)
 		if(isDown) {
-			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
+			leftPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
 		} else {
-			leftPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
+			leftPupilY = faceCentreY + 100
 		}
 	}
 	leftPupilX = leftPupilX + eyePupilOffsetX
@@ -645,7 +701,7 @@ const drawHeadSketch = () => {
 		name: "Iris",
 		marker: irisMarker,
 		move: leftIrisMove,
-		layer: featureContainer
+		layer: leftEyeContainer
 	})
 
 	if(drawWireframe) {
@@ -660,7 +716,7 @@ const drawHeadSketch = () => {
 	leftPupil.endFill()
 	
 
-	featureContainer.addChild(leftPupil)
+	leftEyeContainer.addChild(leftPupil)
 
 
 
@@ -672,13 +728,14 @@ const drawHeadSketch = () => {
 
 
 
-
+	let rightEyeContainer = new PIXI.Container()
+	let rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight
 	let rightEyeSketch = new Graphics()
 	rightEyeSketch.lineStyle(2, faceSketchesColor, 1)
 	if(isLeft) {
-		let rightEyeWidth = 110 * (YAxisEllipseWidth/75)
-		let rightEyeHeight = 70 * (YAxisEllipseWidth/75)
-		let rightEyeX = faceCentreX + 220 + (YAxisEllipseWidth/2.2)
+		rightEyeWidth = 110 * (YAxisEllipseWidth/75)
+		rightEyeHeight = 70 * (YAxisEllipseWidth/75)
+		rightEyeX = faceCentreX + 220 + (YAxisEllipseWidth/2.2)
 		if(rightEyeWidth < 110) {
 			rightEyeWidth = 110
 		}
@@ -692,36 +749,37 @@ const drawHeadSketch = () => {
 			rightEyeHeight = 80
 		}
 		
-		let rightEyeY
 		if(isDown) {
 			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)
 		} else {
-			rightEyeY = faceCentreY + 100// + (XAxisEllipseWidth/2)
+			rightEyeY = faceCentreY + 100
 		}
-		rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
-		// set the pivot point to the center of the sprite
-		rightEyeSketch.pivot.x = rightEyeX 
-		rightEyeSketch.pivot.y = rightEyeY
-		rightEyeSketch.x = rightEyeX 
-		rightEyeSketch.y = rightEyeY
-		/*if(YAxisEllipseWidth > 40) {
-			console.log("YAxisEllipseWidth", YAxisEllipseWidth)
-			let percentage = YAxisEllipseWidth - 40
-			console.log("percentage", percentage)
-			rightEyeSketch.rotation = -percentage / 8
-		}*/
 	} else {
-		let rightEyeWidth = 110 - (YAxisEllipseWidth/4)
-		let rightEyeHeight = 70
-		let rightEyeX = faceCentreX + 210 - (YAxisEllipseWidth/1.4)
-		let rightEyeY
+		rightEyeWidth = 110 - (YAxisEllipseWidth/4)
+		rightEyeHeight = 70
+		rightEyeX = faceCentreX + 210 - (YAxisEllipseWidth/1.4)
+		rightEyeY
 		if(isDown) {
 			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
-			rightEyeY = faceCentreY + 100// + (XAxisEllipseWidth/2)
+			rightEyeY = faceCentreY + 100
 		}
-		rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
+		
 	}
+	rightEyeSketch.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
+
+
+	let rightEyeMask = new Graphics()
+	rightEyeMask.beginFill(0x000000)
+	rightEyeMask.lineStyle(2, 0x000000, 1)
+	rightEyeMask.drawEllipse(rightEyeX, rightEyeY, rightEyeWidth, rightEyeHeight)
+	rightEyeMask.endFill()
+
+	rightEyeContainer.mask = rightEyeMask
+
+	rightEyeContainer.addChild(rightEyeSketch)
+	rightEyeContainer.addChild(rightEyeMask)
+	
 
 	let rightEyeBrow = new Graphics()
 	rightEyeBrow.lineStyle(2, faceSketchesColor, 1)
@@ -771,7 +829,7 @@ const drawHeadSketch = () => {
 		if(isDown) {
 			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
 		} else {
-			rightPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
+			rightPupilY = faceCentreY + 100
 		}
 	} else {
 		rightPupilX = faceCentreX + 210 - (YAxisEllipseWidth/1.2)
@@ -779,14 +837,14 @@ const drawHeadSketch = () => {
 		if(isDown) {
 			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
 		} else {
-			rightPupilY = faceCentreY + 100// + (XAxisEllipseWidth/3)
+			rightPupilY = faceCentreY + 100
 		}
 
 	}
 	rightPupilX = rightPupilX + eyePupilOffsetX
 	rightPupilY = rightPupilY + eyePupilOffsetY
 	
-	featureContainer.addChild(rightEyeSketch)
+	rightEyeContainer.addChild(rightEyeSketch)
 
 
 	
@@ -806,7 +864,7 @@ const drawHeadSketch = () => {
 		name: "Iris",
 		marker: irisMarker,
 		move: irisMove,
-		layer: featureContainer
+		layer: rightEyeContainer
 	})
 
 	
@@ -822,10 +880,39 @@ const drawHeadSketch = () => {
 	rightPupil.drawCircle(rightPupilX, rightPupilY, 10)
 	rightPupil.endFill()
 
-	featureContainer.addChild(rightPupil)
-
+	rightEyeContainer.addChild(rightPupil)
+	featureContainer.addChild(rightEyeContainer)
 	
 
+
+
+	let leftEar = new Graphics()
+	leftEar.lineStyle(2, faceSketchesColor, 1)
+	leftEar.drawEllipse(leftJawStart.x, leftJawStart.y, YAxisEllipseWidth/5, 50)
+	if(isLeft) {
+		if(YAxisEllipseWidth > 50) {
+
+		} else {
+			featureContainer.addChild(leftEar)
+		}
+	} else {
+		featureContainer.addChild(leftEar)
+	}
+
+	let rightEar = new Graphics()
+	rightEar.lineStyle(2, faceSketchesColor, 1)
+	rightEar.drawEllipse(rightJawStart.x, rightJawStart.y, YAxisEllipseWidth/5, 50)
+	if(isLeft) {
+		featureContainer.addChild(rightEar)
+	} else {
+		if(YAxisEllipseWidth > 50) {
+
+		} else {
+			featureContainer.addChild(rightEar)
+		}
+	}
+
+	
 	
 
 	let noseBottomSketch = new Graphics()
@@ -880,6 +967,87 @@ const drawHeadSketch = () => {
 	artContainer.addChild(featureContainer)
 	headContainer.alpha = 0.2
 
+
+
+	let leftShoulderPoint = new Graphics()
+	leftShoulderPoint.lineStyle(2, 0x000000, 1)
+	let leftShoulderPointX = headCentreX - headWidth - 150
+	let leftShoulderPointY = headCentreY + headHeight + jawHeight + 300 + shoulderSlant
+	leftShoulderPoint.drawCircle(leftShoulderPointX, leftShoulderPointY, 10)
+	artContainer.addChild(leftShoulderPoint)
+
+	let leftNextLine = new line({
+		x: leftJawStart.x + 120,
+		y: leftJawStart.y,
+		cp1: 100,
+		cp2: 500,
+		x2: leftShoulderPointX - leftJawStart.x - 120,
+		y2: leftShoulderPointY - leftJawStart.y,
+		cp3: 200,
+		cp4: 600,
+	})
+	if(debug) {
+		let debugLine = leftNextLine.debug()
+		debugNeckContainer.addChild(debugLine)
+	}
+	let leftShoulderLine = new line({
+		x: leftShoulderPointX,
+		y: leftShoulderPointY,
+		cp1: -100,
+		cp2: 50,
+		x2: -150,
+		y2: app.view.height - leftShoulderPointY,
+		cp3: -130,
+		cp4: app.view.height - leftShoulderPointY - 200,
+	})
+	if(debug) {
+		let debugLine = leftShoulderLine.debug()
+		debugNeckContainer.addChild(debugLine)
+	}
+
+	let rightShoulderPoint = new Graphics()
+	rightShoulderPoint.lineStyle(2, 0x000000, 1)
+	let rightShoulderPointX = headCentreX + headWidth + 150
+	let rightShoulderPointY = headCentreY + headHeight + jawHeight + 300 - shoulderSlant
+	rightShoulderPoint.drawCircle(rightShoulderPointX, rightShoulderPointY, 10)
+	artContainer.addChild(rightShoulderPoint)
+
+	let rightNextLine = new line({
+		x: rightJawStart.x - 120,
+		y: rightJawStart.y,
+		cp1: -100,
+		cp2: 500,
+		x2: rightShoulderPointX - rightJawStart.x + 120,
+		y2: rightShoulderPointY - rightJawStart.y,
+		cp3: -200,
+		cp4: 600,
+	})
+	if(debug) {
+		let debugLine = rightNextLine.debug()
+		debugNeckContainer.addChild(debugLine)
+	}
+
+	let rightShoulderLine = new line({
+		x: rightShoulderPointX,
+		y: rightShoulderPointY,
+		cp1: 100,
+		cp2: 50,
+		x2: 150,
+		y2: app.view.height - rightShoulderPointY,
+		cp3: 130,
+		cp4: app.view.height - rightShoulderPointY - 200,
+	})
+	if(debug) {
+		let debugLine = rightShoulderLine.debug()
+		debugNeckContainer.addChild(debugLine)
+	}
+	
+
+
+	
+
+
+
 	return {
 		headWidth: headWidth,
 		headHeight: headHeight,
@@ -901,16 +1069,16 @@ const drawHeadSketch = () => {
 
 const easingWrapper = document.createElement('div');
 easingWrapper.id = 'easing-wrapper';
-easingWrapper.style = 'position: fixed; bottom: 0; right: 0; width: calc(100% - 500px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
+easingWrapper.style = 'position: fixed; bottom: 0; left: 400px; width: calc(100% - 400px); height: 140px; overflow-x:scroll; display: flex; background-color:grey;opacity:1;z-index:10';
 document.body.appendChild(easingWrapper);
 
-
-
+let debugContainer = new PIXI.Container()
+let debugNeckContainer = new PIXI.Container()
 
 const drawFaceShape = (positions) => {
 
 	let faceShape = new PIXI.Container()
-	let debugContainer = new PIXI.Container()
+
 
 	faceShape.x = headCentreX
 	faceShape.y = headCentreY
@@ -1061,21 +1229,6 @@ const drawFaceShape = (positions) => {
 
 
 
-
-
-	/*let leftJawDrawLine = new Move({
-		iterations: 1,
-		line: leftJawLine
-	})
-	let leftJawMark = new Mark({
-		name: "leftJaw",
-		marker: Pencil6B2,
-		move: leftJawDrawLine,
-		layer: faceShape
-	})*/
-
-
-
 	/*let rightNeckLine = new line({
 		x: positions.rightJawStart.x - 25,
 		y: positions.rightJawStart.y,
@@ -1158,8 +1311,6 @@ const drawFaceShape = (positions) => {
 	//canvas.make(rightNeckMark)
 	//canvas.make(leftNeckMark)
 
-
-
 	
 	if(drawWireframe) {
 	} else {
@@ -1169,6 +1320,7 @@ const drawFaceShape = (positions) => {
 	}
 
 	faceShape.addChild(debugContainer)
+	artContainer.addChild(debugNeckContainer)
 
 	return faceShape;
 
@@ -1178,20 +1330,9 @@ const drawFaceShape = (positions) => {
 
 updateDrawValues()
 
-
 canvas.stage.addChild(artContainer)
 
-setTimeout(() => {
-	updateDrawValues()
-}, 100)
-
-
-
-
-
-
 app.render();
-addRenderTime(startTime);
 
 
 

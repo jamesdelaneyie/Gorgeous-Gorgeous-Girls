@@ -15,10 +15,17 @@ const addRenderTime = (startTime) => {
 	const endTime = Date.now()
 	const renderTime = (endTime - startTime) / 1000
 
-	const renderTimeDiv = document.createElement("div")
-	renderTimeDiv.innerHTML = "Initial render time: " + renderTime + " seconds"
-	renderTimeDiv.setAttribute("id", "renderTime")
-	controlPanel.appendChild(renderTimeDiv)
+	//if renderTime div already exists, update it
+	if(document.getElementById("renderTime")) {
+		let renderTimeDiv = document.getElementById("renderTime")
+		renderTimeDiv.innerHTML = "Initial render time: " + renderTime + " seconds"
+	} else {
+		const renderTimeDiv = document.createElement("div")
+		renderTimeDiv.innerHTML = "Initial render time: " + renderTime + " seconds"
+		renderTimeDiv.setAttribute("id", "renderTime")
+		controlPanel.appendChild(renderTimeDiv)
+	}
+	
 }
 
 const addColorSwatchButton = () => {

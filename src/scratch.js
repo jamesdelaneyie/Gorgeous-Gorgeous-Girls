@@ -1015,6 +1015,46 @@ for(let i = 1; i < 14; i++) {
 	exampleImage.style = 'width: 100%; height: 100%; display: block';
 	exampleGallery.append(exampleImage);
 }
+
+
+var count = 2000;
+let width = 1000
+let height = 100
+
+let flowField = new PIXI.Container()
+
+let currentX, currentY
+
+for(var i = 0; i < count; i++) {
+	var x = Math.random() * width,
+		y = Math.random() * height;
+
+	var value = getValue(x, y);
+
+	currentX = x
+	currentY = y
+
+	render(value);
+
+}
+
+function getValue(x, y) {
+	return (x + y) * 0.001 * Math.PI / 5;
+}
+
+function render(value) {
+	let lineGraphic = new Graphics()
+	lineGraphic.lineStyle(2, 0x000000, 1)
+	lineGraphic.rotation += value;
+	lineGraphic.moveTo(currentX, currentY);
+	lineGraphic.lineTo(currentX+50, currentY);
+	flowField.addChild(lineGraphic)
+}
+flowField.x = 1000
+flowField.y = 400
+artContainer.addChild(flowField)
+
+
 //document.body.appendChild(exampleGallery);
 
         /*if(move.pressure !== null) {

@@ -971,7 +971,7 @@ const drawHeadSketch = () => {
 
 	let leftShoulderPoint = new Graphics()
 	leftShoulderPoint.lineStyle(2, 0x000000, 1)
-	let leftShoulderPointX = headCentreX - headWidth - 150
+	let leftShoulderPointX = headCentreX - headWidth - 200
 	let leftShoulderPointY = headCentreY + headHeight + jawHeight + 300 + shoulderSlant
 	leftShoulderPoint.drawCircle(leftShoulderPointX, leftShoulderPointY, 10)
 	artContainer.addChild(leftShoulderPoint)

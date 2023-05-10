@@ -1,5 +1,8 @@
 <img src="https://raw.githubusercontent.com/jamesdelaneyie/Gorgeous-Gorgeous-Girls/master/outputs/faces/ooTuapcXb1Sz3EQeaXirL6PhXeeH91t2zNSit7kdewFMvtFhdco.png">
 
+| ![](/outputs/faces/head-shoulders-1.png?raw=true)  |  ![](/outputs/faces/head-shoulders-2.png?raw=true)  | ![](/outputs/faces/head-shoulders-3.png?raw=true) |  ![](/outputs/faces/head-shoulders-4.png?raw=true)  |
+|---|---|---|---|
+
 
 Gorgeous Gorgeous Girls 
 ================

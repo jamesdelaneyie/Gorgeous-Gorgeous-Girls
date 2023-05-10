@@ -45,7 +45,7 @@ input[type="range"] {
     content: attr(name)":";
     display: block;
     color: white;
-    width: 80px;
+    width: 100px;
     padding: 5px;
     background: black;
     border: 1px solid  #878787;

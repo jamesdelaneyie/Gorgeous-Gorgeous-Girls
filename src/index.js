@@ -471,16 +471,23 @@ const drawHeadSketch = () => {
 		
 	}
 	
+	console.log(faceCentreDistanceY/2)
+
 	let jawEdgeY
 	if(isDown) {
-		jawEdgeY = headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight/3) + YAxisEllipseWidth/3
+		jawEdgeY = headCentreY + headHeight + (jawHeight/3) + YAxisEllipseWidth/3
 	} else {
-		jawEdgeY = headCentreY + headHeight + (faceCentreDistanceY/2) + (jawHeight/3) + YAxisEllipseWidth/3
+		jawEdgeY = headCentreY + headHeight + (faceCentreDistanceY/2) + (jawHeight/3) - XAxisEllipseWidth// + YAxisEllipseWidth/3
 	}
 	
 	//= isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
-	const jawEdgeChinY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight - 30) : headCentreY + headHeight + (faceCentreDistanceY) + (jawHeight - 30) + (faceCentreDistanceY/4)
-
+	//const jawEdgeChinY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight - 30) : headCentreY + headHeight + (faceCentreDistanceY) + (jawHeight - 30) + (faceCentreDistanceY/4)
+	let jawEdgeChinY
+	if(isDown) {
+		jawEdgeChinY = headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight - 30)
+	} else {
+		jawEdgeChinY = headCentreY + headHeight + (faceCentreDistanceY) + (jawHeight - 30) + (faceCentreDistanceY/4)
+	}
 
 	let rightCheek = new Graphics()
 	rightCheek.lineStyle(2, jawColor, 1)
@@ -501,9 +508,18 @@ const drawHeadSketch = () => {
 
 	let rightJawEdgeX
 	if(isLeft) {
-		rightJawEdgeX = headCentreX + 320 - (XAxisEllipseWidth/3)// - (YAxisEllipseWidth/3)
+		if(isDown) {
+			rightJawEdgeX = headCentreX + 320 - (XAxisEllipseWidth/3)// - (YAxisEllipseWidth/3)
+		} else {
+			rightJawEdgeX = headCentreX + 320 - (YAxisEllipseWidth/5) + (XAxisEllipseWidth/3)
+		}
 	} else {
-		rightJawEdgeX = headCentreX + 320 - (YAxisEllipseWidth/5) - (XAxisEllipseWidth/3)
+		if(isDown) {
+			rightJawEdgeX = headCentreX + 320 - (YAxisEllipseWidth/5) - (XAxisEllipseWidth/3)
+		} else {
+			rightJawEdgeX = headCentreX + 320 - (YAxisEllipseWidth/5) + (XAxisEllipseWidth/3)
+		}
+		
 	}
 
 	
@@ -537,9 +553,18 @@ const drawHeadSketch = () => {
 
 	let leftJawEdgeX
 	if(isLeft) {
-		leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3)
+		if(isDown) {
+			leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/5) + (XAxisEllipseWidth/3)
+		} else {
+			leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/5) - (XAxisEllipseWidth/3)
+		}
 	} else {
-		leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3) + (XAxisEllipseWidth/3)
+		if(isDown) {
+			leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3) + (XAxisEllipseWidth/3)
+		} else {
+			leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3) - (XAxisEllipseWidth/3)
+		}
+		
 	}
 
 	let leftJawChinEdgeX
@@ -991,7 +1016,7 @@ const drawHeadSketch = () => {
 	let mouthXStart = faceCentreX - 100
 	let mouthYStart = faceCentreY + 380 + (jawHeight/2)
 	if(isLeft) {
-		mouthXStart = mouthXStart + (YAxisEllipseWidth/3) + (XAxisEllipseWidth/2)
+		mouthXStart = mouthXStart + (YAxisEllipseWidth/3)// + (XAxisEllipseWidth/2)
 		if(isDown) {
 			//mouthXStart = mouthXStart + (XAxisEllipseWidth/4)
 			let XAxisPercentage = XAxisEllipseWidth / 100
@@ -1017,6 +1042,28 @@ const drawHeadSketch = () => {
 	mouthSketch.lineStyle(2, faceSketchesColor, 1)
 	mouthSketch.moveTo(mouthXStart, mouthYStart)
 	mouthSketch.lineTo(mouthXEnd, mouthYStart)
+
+	let mouthPercentageRotation = YAxisEllipseWidth / 100
+	let mouthPercentageRotationTwo = XAxisEllipseWidth / 225
+	let mouthRotation = 0
+	if(isLeft) {
+		if(isDown) {
+			mouthRotation = mouthRotation + (mouthPercentageRotation * 10) + (mouthPercentageRotationTwo * 100)
+		} else {
+			mouthRotation = mouthRotation + (mouthPercentageRotation * 10) - (mouthPercentageRotationTwo * 100)
+		}
+		
+	} else {
+		mouthRotation = mouthRotation - (mouthPercentageRotation * 10) + (mouthPercentageRotationTwo * 100)
+	}
+	// set the pivot point to the centre of the sprite
+	mouthSketch.pivot.x = mouthXStart
+	mouthSketch.pivot.y = mouthYStart
+	// move the sprite to the top left corner, so the pivot point is in the center
+	mouthSketch.x = mouthXStart
+	mouthSketch.y = mouthYStart
+
+	mouthSketch.rotation = mouthRotation / 300
 	featureContainer.addChild(mouthSketch)
 
 

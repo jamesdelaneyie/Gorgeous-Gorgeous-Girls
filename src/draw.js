@@ -76,7 +76,7 @@ class line {
         debug.moveTo(this.x, this.y);
         debug.bezierCurveTo(cp1Local, cp2Local, cp3Local, cp4Local, newEndX, newEndY);
 
-        debug.lineStyle(2, 0x00ff00, 1)
+        /*debug.lineStyle(2, 0x00ff00, 1)
 		debug.drawCircle(this.x, this.y, 4)
 		debug.drawCircle(this.x + this.x2, this.y + this.y2, 4)
 		debug.drawCircle(this.x + this.cp1, this.y + this.cp2, 4)
@@ -84,7 +84,7 @@ class line {
 		debug.moveTo(this.x, this.y)
 		debug.lineTo(this.x + this.cp1, this.y + this.cp2)
 		debug.moveTo(this.x + this.x2, this.y + this.y2)
-		debug.lineTo(this.x + this.cp3, this.y + this.cp4)
+		debug.lineTo(this.x + this.cp3, this.y + this.cp4)*/
         
         return debug
     }

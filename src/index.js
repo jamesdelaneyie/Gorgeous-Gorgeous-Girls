@@ -185,8 +185,8 @@ const addReferenceImages = () => {
 const YAxisMaxAngle = rand(0, 225)
 const XAxisMaxAngle = rand(0, 225)
 
-let YAxisEllipseWidth = -225//225//rand(-YAxisMaxAngle, YAxisMaxAngle)
-let XAxisEllipseWidth = -225//rand(-XAxisMaxAngle, XAxisMaxAngle)
+let YAxisEllipseWidth = 0//-225//225//rand(-YAxisMaxAngle, YAxisMaxAngle)
+let XAxisEllipseWidth = 0//-225//rand(-XAxisMaxAngle, XAxisMaxAngle)
 
 let isLeft = YAxisEllipseWidth < 0
 let isDown = XAxisEllipseWidth < 0
@@ -198,9 +198,9 @@ let eyePupilOffsetY = 0//rand(-20, 20)
 
 let headCentreX = app.view.width/2
 let headCentreY = app.view.height/2 - (app.view.height/10)
-const jawHeight = app.view.height/10
+let jawHeight = app.view.height/7
 const headHeight = 440
-const headWidth = 440
+const headWidth = 420
 
 let shoulderSlant = 0//rand(-50, 100)
 let shoulderAngle = 0
@@ -217,6 +217,7 @@ const updateDrawValues = async () => {
 	let eyeOffsetYValue = eyeOffsetYSlider.value
 	let shoulderAngleValue = shoulderAngleSlider.value
 	let shoulderSlantValue = shoulderSlantSlider.value
+	let jawHeightValue = jawHeightSlider.value
 
 
 	XAxisSlider.setAttribute("value", XValue)
@@ -226,6 +227,7 @@ const updateDrawValues = async () => {
 	eyeOffsetYSlider.setAttribute("value", eyeOffsetYValue)
 	shoulderAngleSlider.setAttribute("value", shoulderAngleValue)
 	shoulderSlantSlider.setAttribute("value", shoulderSlantValue)
+	jawHeightSlider.setAttribute("value", jawHeightValue)
 
 	//use the variable to change the scale of the container
 	XAxisEllipseWidth = Number(XValue)
@@ -235,6 +237,7 @@ const updateDrawValues = async () => {
 	eyePupilOffsetY = Number(eyeOffsetYValue)
 	shoulderAngle = Number(shoulderAngleValue)
 	shoulderSlant = Number(shoulderSlantValue)
+	jawHeight = Number(jawHeightValue)
 
 	artContainer.removeChildren()
 	debugNeckContainer.removeChildren()
@@ -316,12 +319,13 @@ const createSlider = (name, min, max, value, step, type) => {
 }
 
 const YAxisSlider = createSlider("X Axis", -225, 225, YAxisEllipseWidth, 1, "range")
-const XAxisSlider = createSlider("Y Axis", -225, 225, XAxisEllipseWidth, 1, "range")
+const XAxisSlider = createSlider("Y Axis", -100, 100, XAxisEllipseWidth, 1, "range")
 const headTiltSlider = createSlider("Tilt Angle", -20, 20, headTilt, 1, "range")
 const eyeOffsetXSlider = createSlider("Eye Offset X", -20, 20, eyePupilOffsetX, 1, "range")
 const eyeOffsetYSlider = createSlider("Eye Offset Y", -20, 20, eyePupilOffsetY, 1, "range")
 const shoulderAngleSlider = createSlider("Shoulder Angle", -150, 150, shoulderAngle, 1, "range")
 const shoulderSlantSlider = createSlider("Shoulder Slant", -100, 100, shoulderSlant, 1, "range")
+const jawHeightSlider = createSlider("Jaw Height", 200, 300, jawHeight, 1, "range")
 
 //Create a range slider input element and add it to the page
 //set the color for all inputs on the page to the highlight color
@@ -330,7 +334,7 @@ inputs.forEach(input => {
 	input.style.color = highlightColor
 })
 
-
+console.log(jawHeight)
 
 
 
@@ -377,7 +381,7 @@ const drawHeadSketch = () => {
 		skullCentreX = headCentreX - (YAxisEllipseWidth/5)
 	}
 	headSkullShape.drawEllipse(skullCentreX, headCentreY, headWidth, headHeight)
-	headContainer.addChild(headSkullShape)
+	//headContainer.addChild(headSkullShape)
 
 	// Get the top point of the skullshape
 	const skullTopPoint = {x: headCentreX, y: headCentreY - headHeight}
@@ -397,10 +401,10 @@ const drawHeadSketch = () => {
 	const YEndAngle = isLeft ? Y_AXIS_LEFT_END : Y_AXIS_RIGHT_END;
 
 	if(isLeft) {
-		drawEllipseCurves(headCentreX - (YAxisEllipseWidth/5), headCentreY, YAxisEllipseWidth*2, headHeight*2, headContainer, isLeft)
+		//drawEllipseCurves(headCentreX - (YAxisEllipseWidth/5), headCentreY, YAxisEllipseWidth*2, headHeight*2, headContainer, isLeft)
 		drawEllipse(headCentreX - (YAxisEllipseWidth/5), headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
 	} else {
-		drawEllipseCurves(headCentreX + (YAxisEllipseWidth/5), headCentreY, YAxisEllipseWidth*2, headHeight*2, headContainer, isLeft)
+		//drawEllipseCurves(headCentreX + (YAxisEllipseWidth/5), headCentreY, YAxisEllipseWidth*2, headHeight*2, headContainer, isLeft)
 		drawEllipse(headCentreX + (YAxisEllipseWidth/5), headCentreY, YStartAngle, YEndAngle, YAxisEllipseWidth, headHeight, YAxisEllipsePoints, headContainer, skullColor);
 	}
 
@@ -422,10 +426,10 @@ const drawHeadSketch = () => {
 	const XEndAngle = isDown ? X_AXIS_TOP_END : X_AXIS_BOTTOM_END;
 
 	if(isLeft) {
-		drawEllipseCurves(headCentreX + (YAxisEllipseWidth/5), headCentreY, headWidth*2, XAxisEllipseWidth*2, headContainer, isLeft)
+		//drawEllipseCurves(headCentreX + (YAxisEllipseWidth/5), headCentreY, headWidth*2, XAxisEllipseWidth*2, headContainer, isLeft)
 		drawEllipse(headCentreX + (YAxisEllipseWidth/5), headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
 	} else {
-		drawEllipseCurves(headCentreX - (YAxisEllipseWidth/5), headCentreY, headWidth*2, XAxisEllipseWidth*2, headContainer, isLeft)
+		//drawEllipseCurves(headCentreX - (YAxisEllipseWidth/5), headCentreY, headWidth*2, XAxisEllipseWidth*2, headContainer, isLeft)
 		drawEllipse(headCentreX - (YAxisEllipseWidth/5), headCentreY, XStartAngle, XEndAngle, headWidth, XAxisEllipseWidth, XAxisEllipsePoints, headContainer, skullColor);
 	}
 
@@ -444,7 +448,7 @@ const drawHeadSketch = () => {
 	const faceCentrePoint = new Graphics()
 	faceCentrePoint.lineStyle(2, centrePointColor, 1)
 	faceCentrePoint.drawCircle(faceCentreX, faceCentreY, 5)
-	headContainer.addChild(faceCentrePoint)
+	//headContainer.addChild(faceCentrePoint)
 
 	// Draw lines from the jaw to the chin to the centre of the face
 	let rightCheekDistance = isLeft ? YAxisEllipseWidth : -YAxisEllipseWidth
@@ -455,19 +459,26 @@ const drawHeadSketch = () => {
 	
 	let jawBottomX
 	if(isLeft) {
-		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)// - (YAxisEllipseWidth/4)
+		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) - (YAxisEllipseWidth/4)
 		if(isDown) {
 			jawBottomX = jawBottomX// + (XAxisEllipseWidth/4)
 		}
 	} else {
-		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2)// + (YAxisEllipseWidth/4)
+		jawBottomX = headCentreX - rightCheekDistance - (faceCentreDistanceX / 2) + (YAxisEllipseWidth/4)
 		if(isDown) {
 			jawBottomX = jawBottomX //- (XAxisEllipseWidth/4)
 		}
 		
 	}
 	
-	const jawEdgeY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
+	let jawEdgeY
+	if(isDown) {
+		jawEdgeY = headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight/3) + YAxisEllipseWidth/3
+	} else {
+		jawEdgeY = headCentreY + headHeight + (faceCentreDistanceY/2) + (jawHeight/3) + YAxisEllipseWidth/3
+	}
+	
+	//= isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) : headCentreY + headHeight + (faceCentreDistanceY)
 	const jawEdgeChinY = isDown ? headCentreY + headHeight - (faceCentreDistanceY/2) + (jawHeight - 30) : headCentreY + headHeight + (faceCentreDistanceY) + (jawHeight - 30) + (faceCentreDistanceY/4)
 
 
@@ -476,7 +487,7 @@ const drawHeadSketch = () => {
 
 	let rightJawStartX
 	if(isLeft) {
-		rightJawStartX = headCentreX + headWidth - (YAxisEllipseWidth/5)
+		rightJawStartX = headCentreX + headWidth + YAxisEllipseWidth/3
 	} else {
 		rightJawStartX = headCentreX + headWidth - (YAxisEllipseWidth/3)
 	}
@@ -485,14 +496,14 @@ const drawHeadSketch = () => {
 	if(isLeft) {
 		rightJawChinEdgeX = headCentreX + 120 - (YAxisEllipseWidth/3)
 	} else {
-		rightJawChinEdgeX = headCentreX + 120 + (YAxisEllipseWidth/3)
+		rightJawChinEdgeX = headCentreX + 120 + (YAxisEllipseWidth/2)// - (YAxisEllipseWidth/6)
 	}
 
 	let rightJawEdgeX
 	if(isLeft) {
-		rightJawEdgeX = headCentreX + 320 - (YAxisEllipseWidth/3)
+		rightJawEdgeX = headCentreX + 320 - (XAxisEllipseWidth/3)// - (YAxisEllipseWidth/3)
 	} else {
-		rightJawEdgeX = headCentreX + 320 
+		rightJawEdgeX = headCentreX + 320 - (YAxisEllipseWidth/5) - (XAxisEllipseWidth/3)
 	}
 
 	
@@ -521,19 +532,19 @@ const drawHeadSketch = () => {
 	if(isLeft) {
 		leftJawStartX = headCentreX - headWidth + (YAxisEllipseWidth/3)
 	} else {
-		leftJawStartX = headCentreX - headWidth + (YAxisEllipseWidth/5)
+		leftJawStartX = headCentreX - headWidth - (YAxisEllipseWidth/3)
 	}
 
 	let leftJawEdgeX
 	if(isLeft) {
-		leftJawEdgeX = headCentreX - 320
-	} else {
 		leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3)
+	} else {
+		leftJawEdgeX = headCentreX - 320 + (YAxisEllipseWidth/3) + (XAxisEllipseWidth/3)
 	}
 
 	let leftJawChinEdgeX
 	if(isLeft) {
-		leftJawChinEdgeX = headCentreX - 120 - (YAxisEllipseWidth/3)
+		leftJawChinEdgeX = headCentreX - 120 - (YAxisEllipseWidth/2)// + (YAxisEllipseWidth/8)
 	} else {
 		leftJawChinEdgeX = headCentreX - 120 + (YAxisEllipseWidth/3)
 	}
@@ -556,7 +567,7 @@ const drawHeadSketch = () => {
 	dottedLine.lineStyle(2, jawColor, 1)
 	dottedLine.moveTo(faceCentreX, faceCentreY)
 	dottedLine.lineTo(jawBottomX, jawBottomY)
-	headContainer.addChild(dottedLine)
+	//headContainer.addChild(dottedLine)
 
 
 
@@ -760,7 +771,7 @@ const drawHeadSketch = () => {
 	if(isLeft) {
 		rightEyeWidth = 110 * (YAxisEllipseWidth/75)
 		rightEyeHeight = 70 * (YAxisEllipseWidth/75)
-		rightEyeX = faceCentreX + 220 + (YAxisEllipseWidth/2.2)
+		rightEyeX = faceCentreX + 220 + (YAxisEllipseWidth/3)
 		if(rightEyeWidth < 110) {
 			rightEyeWidth = 110
 		}
@@ -775,7 +786,7 @@ const drawHeadSketch = () => {
 		}
 		
 		if(isDown) {
-			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)
+			rightEyeY = faceCentreY + 100 + XAxisEllipseWidth/3
 		} else {
 			rightEyeY = faceCentreY + 100
 		}
@@ -785,7 +796,7 @@ const drawHeadSketch = () => {
 		rightEyeX = faceCentreX + 210 - (YAxisEllipseWidth/1.4)
 		rightEyeY
 		if(isDown) {
-			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
+			rightEyeY = faceCentreY + 100 - (XAxisEllipseWidth/2)// - (YAxisEllipseWidth/8)
 		} else {
 			rightEyeY = faceCentreY + 100
 		}
@@ -850,9 +861,9 @@ const drawHeadSketch = () => {
 	let rightPupilX
 	let rightPupilY
 	if(isLeft) {
-		rightPupilX = faceCentreX + 210 + (YAxisEllipseWidth/2)
+		rightPupilX = faceCentreX + 210 + (YAxisEllipseWidth/2.5)
 		if(isDown) {
-			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)
+			rightPupilY = faceCentreY + 100 + (XAxisEllipseWidth/4)
 		} else {
 			rightPupilY = faceCentreY + 100
 		}
@@ -860,7 +871,7 @@ const drawHeadSketch = () => {
 		rightPupilX = faceCentreX + 210 - (YAxisEllipseWidth/1.2)
 		
 		if(isDown) {
-			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2) - (YAxisEllipseWidth/8)
+			rightPupilY = faceCentreY + 100 - (XAxisEllipseWidth/2)// - (YAxisEllipseWidth/8)
 		} else {
 			rightPupilY = faceCentreY + 100
 		}
@@ -945,16 +956,16 @@ const drawHeadSketch = () => {
 
 
 	let noseCentreX = faceCentreX - 40
-	let noseCentreY = faceCentreY + 360
+	let noseCentreY = faceCentreY + 360 
 	if(isLeft) {
-		noseCentreX = noseCentreX + (YAxisEllipseWidth/5)
+		noseCentreX = noseCentreX// + (YAxisEllipseWidth/4)
 		if(isDown) {
 			noseCentreX = noseCentreX + (XAxisEllipseWidth/10)
 		} else {
 
 		}
 	} else {
-		noseCentreX = noseCentreX - (YAxisEllipseWidth/5)
+		noseCentreX = noseCentreX// - (YAxisEllipseWidth/5)
 		if(isDown) {
 			noseCentreX = noseCentreX - (XAxisEllipseWidth/10)
 		} else {
@@ -963,9 +974,9 @@ const drawHeadSketch = () => {
 	}
 	
 	if(isDown) {
-		noseCentreY = noseCentreY - XAxisEllipseWidth + YAxisEllipseWidth/5
+		noseCentreY = noseCentreY - XAxisEllipseWidth/5// + YAxisEllipseWidth/5
 	} else {
-		noseCentreY = noseCentreY - (XAxisEllipseWidth/3)
+		noseCentreY = noseCentreY - XAxisEllipseWidth/1.5
 	}
 	let noseXStart = noseCentreX
 	let noseXEnd = noseXStart + 80
@@ -978,24 +989,26 @@ const drawHeadSketch = () => {
 
 
 	let mouthXStart = faceCentreX - 100
-	let mouthYStart = faceCentreY + 340 + (jawHeight/2)
+	let mouthYStart = faceCentreY + 380 + (jawHeight/2)
 	if(isLeft) {
-		mouthXStart = mouthXStart + (YAxisEllipseWidth/3)
+		mouthXStart = mouthXStart + (YAxisEllipseWidth/3) + (XAxisEllipseWidth/2)
 		if(isDown) {
-			mouthXStart = mouthXStart + (XAxisEllipseWidth/4)
-			mouthYStart = mouthYStart + (XAxisEllipseWidth/4)
+			//mouthXStart = mouthXStart + (XAxisEllipseWidth/4)
+			let XAxisPercentage = XAxisEllipseWidth / 100
+			//console.log(XAxisPercentage)
+			mouthYStart = mouthYStart - (XAxisEllipseWidth) + ((YAxisEllipseWidth/4)*XAxisPercentage)
 		}
 	} else {
 		mouthXStart = mouthXStart - (YAxisEllipseWidth/3)
 		if(isDown) {
-			mouthXStart = mouthXStart + (XAxisEllipseWidth/4)
-			mouthYStart = mouthYStart + (XAxisEllipseWidth/4)
+			//mouthXStart = mouthXStart + (XAxisEllipseWidth/4)
+			mouthYStart = mouthYStart - (XAxisEllipseWidth)
 		}
 	}
 	if(isDown) {
-		mouthYStart = mouthYStart - (XAxisEllipseWidth/1)
+		//mouthYStart = mouthYStart - (XAxisEllipseWidth/1.5)
 	} else {
-		mouthYStart = mouthYStart - (XAxisEllipseWidth/2.5)
+		mouthYStart = mouthYStart - (XAxisEllipseWidth/1.5)
 	}
 
 	let mouthXEnd = mouthXStart + 200
@@ -1386,7 +1399,7 @@ const drawFaceShape = (positions) => {
 
 	if(debug) {
 		let debugLine = leftJawLine.debug()
-		debugContainer.addChild(debugLine)
+		//debugContainer.addChild(debugLine)
 	}
 
 
